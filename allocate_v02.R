@@ -25,7 +25,7 @@ names(suit)<- c("lc1", "lc2", "lc3", "lc4", "lc7", "lc8")
 spatial <- raster("pa_all.tif")
 
 #
-ncores = detectCores()/4 
+ncores = detectCores()/2 
 iter.max=110
 max.epoche =nrow(demand)
 
@@ -99,14 +99,25 @@ print ("start trajectories")
 #  }
 #}
 
-for (i in 1:layer){
+#for (i in 1:layer){
+#  traj_ind <- which (traj[lc_cat[i],lc_cat] != 1) # identify classes with restricted trajectories
+#  for (a in 1:length(traj_ind)){
+#    tmp_index <- is.element(tprop.previous_vector, traj_ind[a])   # identiy position of classes with trajectory restriction for each layer and each restriction
+#    p_vector[trans.years_vector[tmp_index] < traj[lc_cat[i], traj_ind[a]],i] <- NA # set p_vector to NA if the trajectory is not allowed
+#    print(i)
+#  }
+#}
+ptm <- proc.time()
+for (i in 1:layer){ 
   traj_ind <- which (traj[lc_cat[i],lc_cat] != 1) # identify classes with restricted trajectories
+  cat_index <- which(tprop.previous_vector==lc_cat[i]) # index classes
   for (a in 1:length(traj_ind)){
-    tmp_index <- is.element(tprop.previous_vector, traj_ind[a])   # identiy position of classes with trajectory restriction for each layer and each restriction
-    p_vector[trans.years_vector[tmp_index] < traj[lc_cat[i], traj_ind[a]],i] <- NA # set p_vector to NA if the trajectory is not allowed
-    print(i)
+    p_vector[cat_index, traj_ind[a]]<- ifelse (trans.years_vector[cat_index] < traj[traj_ind[a], lc_cat[i]], NA, p_vector[cat_index, traj_ind[a]])
+    cat(i)
   }
 }
+ptm2<- proc.time() - ptm
+print(ptm2)
 
 print("trajectories/matrix - done")  
 
