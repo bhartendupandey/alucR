@@ -1,3 +1,47 @@
+# file:     allocate_v2.R
+#
+# coder:    
+# florian.gollnow@geo.hu-berlin.de
+# moenkemt@geo.hu-berlin.de
+
+
+
+#alucR - allocation of land use change 
+#---
+## alucR
+#alucR - Project is a first step to implement a Land Use Change Model in R (http://www.r-project.org). 
+#We have been following the basic framework provided by Verburg et al. (2002). The code uses basic R-language and packages and is fully documented. This makes
+#it possible to easily adapt the code to the users specific needs. 
+
+
+## Function definition:
+# aluc(lc, suit, spatial, demand, elas, traj, nochange.lc, init.years, ncores, iter.max, print.log=TRUE, plot=TRUE, writeRaster=TRUE)
+
+ 
+#argument | description 
+#----- | ----- 
+#lc | categorical RasterLayer of the initial Land Use Classes  
+#suit | either a RasterStack or a list of RasterStacks(for each year) of the probabilities for the modeled land use classes resulting from the statistical modelling. The datatype should be Float (FLT4S). The names of the layers should correspond to the landuse/cover classes as follows: "lc1", "lc2", "lc3",..  
+#spatial | either a RasterLayer or a list of RasterLayers(for each year) of locations where no land sue change is allowed (i.e. Protected Areas) containing the values 0 for c areas where conversions are allowed and 1 for areas where conversions are not allowed
+#demand | matrix specifying the amount of pixel for each land use class in the subsequent modelling steps. Columns are land use classes, number of rows equal the number of modelling steps. Values should be integer.
+#elas | vector containing values referring to the conversion elasticity of the land use/cover classes. 0: easy to convert, 0.5 : medium to convert, 1: difficult to convert.
+#traj | matrix describing the trajectories of land use. Rows: initial land use/cover, Columns: following land use/cover. Values define the years of transition, e.g. 0: no transition allowed, 1: transition allowed after first iteration, 10: transition allowed after 10 iterations.
+#nochange.lc | vector with integer numbers of stable classes, e.g. water.
+#init.years | factor to set the initial number of years the pixels are under the specific land use at the beginning of the modelling.
+#iter.max | integer number specifying the maximum number of iteration until the allocation of land use is stopped
+#ncores | integer number specifying the number of cores to us during processing
+#print.log | TRUE/FALSE if tail of log file is printed during processing
+#writeRaster | TRUE/FALSE if scenario output raster should be writen to the working directory during iteration
+
+## Output: 
+#list of    
+#[[1]] RasterStack containing the categorical scenarios of land use allocation for the requested years   
+#[[2]] matrix of all log information   
+#[[3]] matrix of final log information of the final allocation for each epoche.   
+
+
+
+
 
 library(rgdal)
 library(sp)
@@ -29,16 +73,17 @@ ncores = detectCores()/2
 iter.max=110
 max.epoche =nrow(demand)
 
+
+
+scenarios<-aluc(lc=lc, suit=suit, spatial=spatial,demand=demand, elas=elas, traj=trajectories, nochange.lc=nochange.lc, init.years=5, ncores=detectCores()/4,iter.max=100, writeRaster=TRUE)
+
 #####
-#packages for processing
+#packages dependencies
 library(rgdal)
 library(sp)
 library(raster)
 library(parallel)
 ####
-
-scenarios<-aluc(lc=lc, suit=suit, spatial=spatial,demand=demand, elas=elas, traj=trajectories, nochange.lc=nochange.lc, init.years=5, ncores=detectCores()/4,iter.max=100, writeRaster=TRUE)
-
 
 aluc <- function (lc, suit, spatial, demand, elas, traj, nochange.lc, init.years, ncores, iter.max, print.log=TRUE, plot=TRUE, writeRaster=TRUE){
 
@@ -62,8 +107,8 @@ p_vector <-   if(class(suit)=="RasterStack"){
 sp.rest_vector <- if(class(spatial)=="RasterLayer"){ 
                       getValues(spatial)
                   }else if (class(spatial)=="character"){
-                       getValues(stack(get(spatial)[epoche]))
-                        }        
+                    getValues(stack(get(spatial)[epoche]))
+                    }        
 
 #####
 print ("raster to vector conversion done")					
@@ -88,26 +133,8 @@ if (epoche==1){
 print ("start trajectories")
 #####
 #Trajectories
-#tprop.previous_landuse=which(!is.na(tprop.previous_vector)) # only id's with lc (no NAs)
-#tprop.previous_layers=as.vector(na.exclude(unique(tprop.previous_vector)))# unique Land cover
-#for (i in tprop.previous_landuse) { # loop through all pixels with lc
-# lu=tprop.previous_vector[i];
-#  for (t in tprop.previous_layers) { # loop through all layers of suitability
-#    if (trans.years_vector[i] < traj[lu,t]) {
-#      p_vector[i,t]=NA;
-#    }
-#  }
-#}
 
-#for (i in 1:layer){
-#  traj_ind <- which (traj[lc_cat[i],lc_cat] != 1) # identify classes with restricted trajectories
-#  for (a in 1:length(traj_ind)){
-#    tmp_index <- is.element(tprop.previous_vector, traj_ind[a])   # identiy position of classes with trajectory restriction for each layer and each restriction
-#    p_vector[trans.years_vector[tmp_index] < traj[lc_cat[i], traj_ind[a]],i] <- NA # set p_vector to NA if the trajectory is not allowed
-#    print(i)
-#  }
-#}
-ptm <- proc.time()
+#ptm <- proc.time()
 for (i in 1:layer){ 
   traj_ind <- which (traj[lc_cat[i],lc_cat] != 1) # identify classes with restricted trajectories
   cat_index <- which(tprop.previous_vector==lc_cat[i]) # index classes
@@ -116,8 +143,8 @@ for (i in 1:layer){
     cat(i)
   }
 }
-ptm2<- proc.time() - ptm
-print(ptm2)
+#ptm2<- proc.time() - ptm
+#print(ptm2)
 
 print("trajectories/matrix - done")  
 
@@ -219,17 +246,7 @@ repeat {
     change.perc <- abs((diff.pix.hist[u-1,]-diff.pix.hist[u,])/(diff.pix.hist[u-1,])*100) 
     proportion <- abs(diff.pix.hist[u,])/ colSums(abs(diff.pix.hist[c(u,u-1),]),na.rm=TRUE)
     better<- abs(diff.pix.hist[u,])< abs(diff.pix.hist[u-1,])
-    
-    #korr <- as.vector(ifelse(diff.pix.hist[u,]== 0 , 0,
-     #                        ifelse(diff.pix.hist[u,]!=0 & korr.hist[u-1,]==0,-1*sign(diff.perc)*1/100,
-      #                              ifelse(better  ==FALSE & sign(diff.pix.hist[u,])  ==sign(diff.pix.hist[u-1,]), korr.hist[u-1,]*2,
-       #                                    ifelse(abs(diff.perc)<= 0.001 & abs(diff.pix.hist[u,])<= 20 & sign(diff.pix.hist[u,])==sign(diff.pix.hist[u-1,]), (korr.hist[u-1,]/2)+(korr.hist[u-1,]/2)*proportion,
-        #                                          ifelse(change.perc< 20& sign(diff.perc)==sign(diff.p.hist[u-1,]),korr.hist[u-1,]*2,
-         #                                                ifelse(change.perc< 40& change.perc >= 20 & sign(diff.perc)==sign(diff.p.hist[u-1,]), korr.hist[u-1,]+(korr.hist[u-1,]*proportion),
-          #                                                      ifelse(sign(diff.pix.hist[u,])	!=sign(diff.pix.hist[u-1,]), -1* korr.hist[u-1,]*proportion,
-           #                                                            korr.hist[u-1,]))))))), mode="numeric") 
-    
-   
+ 
     korr <- as.vector(ifelse(diff.pix.hist[u,]== 0 , 0,
                              ifelse(diff.pix.hist[u,]!=0 & korr.hist[u-1,]==0,-1*sign(diff.perc)*1/100,
                                     ifelse(better==FALSE & sign(diff.pix.hist[u,])==sign(diff.pix.hist[u-1,]), korr.hist[u-1,]*2,
@@ -267,7 +284,8 @@ repeat {
   log1 <- rbind(log1,log.tmp)
   
   if(print.log==TRUE){
-    print(tail(log1))
+    #print(tail(log1))
+    print(log.tmp)
   }
 #####
   #initialize next u sequence
@@ -319,6 +337,3 @@ epoche <- epoche+1
 
 return(list(stack (mget (paste("scenario", rep(1:nrow(demand)),sep=""))), log1, log2))
 }
-  
-  
-  
