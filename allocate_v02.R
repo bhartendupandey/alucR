@@ -31,7 +31,7 @@
 #iter.max | integer number specifying the maximum number of iteration until the allocation of land use is stopped
 #ncores | integer number specifying the number of cores to us during processing
 #print.log | TRUE/FALSE if tail of log file is printed during processing
-#writeRaster | TRUE/FALSE if scenario output raster should be writen to the working directory during iteration
+#writeRaster | TRUE/FALSE if scenario output raster should be written to the working directory during iteration
 
 ## Output: 
 #list of    
@@ -48,7 +48,7 @@ library(raster)
 library(parallel)
 ####
 
-aluc <- function (lc, suit, spatial, demand, elas, traj, nochange.lc, init.years, ncores, iter.max, print.log=TRUE, plot=TRUE, writeRaster=TRUE){
+aluc <- function (lc, suit, spatial, demand, elas=rep(0, max(lc_cat)), traj=matrix(data=1, ncol=max(lc_cat), nrow=max(lc_cat)), nochange.lc=c(), init.years= 5,  stop.crit=c(0.003 , 1, 10),iter.max=100, ncores=detectCores(), print.log=TRUE, plot=TRUE, writeRaster=TRUE, korr_iter=1){
 
 epoche=1
 
@@ -61,7 +61,7 @@ data_vector <- if (epoche==1) {
                     getValues (new.data)
                   }
 
-p_vector <-   if(class(suit)=="RasterStack"){ 
+p_vector <-   if(class(suit)=="RasterStack" | class(suit)=="RasterBrick"){ 
                   getValues(suit)
               }else if (class(suit)=="character"){
                   getValues(stack(get(suit)[epoche]))
@@ -81,7 +81,9 @@ layer <- ncol(p_vector)
 
 
 #mask NA's from p_vector
+if (all(complete.cases(data_vector)==FALSE)){
 p_vector [is.na(data_vector), ] <- NA
+}
 
 #####
 # only for the first epoche, forthe following epoches defined below:
@@ -121,10 +123,12 @@ p_vector[sp.rest_index,] <- NA;
 #adjust demand to spatial restrictions
 lc.sp.rest <- tabulate(data_vector[sp.rest_index], nbins=max(lc_cat))
 
-#noChange classes
+#noChange classes - adjust demand 
 demand.new <- demand[epoche,]- lc.sp.rest
-demand.new [nochange.lc] <- 0 # set demand to zero for no change classes
-
+demand.new [nochange.lc] <- NA # set demand to zero for no change classes
+    
+min.demand <- which.min(demand.new)
+ 
 #set no.change classes to NA
 nochange_index <- is.element(data_vector, nochange.lc) 
 p_vector[nochange_index, ]<- NA
@@ -148,11 +152,11 @@ for (i in 1:length(lc_cat)) {
 
 #####
 # set initial values for ITER 
-if (epoche==1) {
+#if (epoche==1) {
   iter <- rep(0,max(lc_cat));
-} else {
-  iter <- iter.hist[nrow(iter.hist),]; #from the last epoche  
-}
+#} else {
+#  iter <- iter.hist[nrow(iter.hist),]; #from the last epoche  
+#}
 
 #####
 # prepare log data frames
@@ -179,7 +183,8 @@ cl <- makeCluster(getOption("cl.cores", ncores));
 
 repeat { 
   # calc P2 values with ITER 
-  if (u==1 & epoche==1){
+ # if (u==1 & epoche==1){
+ if (u==1){
     p2_vector<- p_vector
   }else{
     for (i in c(1:layer)) {
@@ -210,22 +215,30 @@ repeat {
     proportion <- abs(diff.pix.hist[u,])/ colSums(abs(diff.pix.hist[c(u,u-1),]),na.rm=TRUE)
     better<- abs(diff.pix.hist[u,])< abs(diff.pix.hist[u-1,])
  
+ if (korr_iter ==1){
     korr <- as.vector(ifelse(diff.pix.hist[u,]== 0 , 0,
-                             ifelse(diff.pix.hist[u,]!=0 & korr.hist[u-1,]==0,-1*sign(diff.perc)*1/100,
+                             ifelse(diff.pix.hist[u,]!=0 & korr.hist[u-1,]==0,-1*sign(diff.perc)*1/sample(50:150, 1),
                                     ifelse(better==FALSE & sign(diff.pix.hist[u,])==sign(diff.pix.hist[u-1,]), korr.hist[u-1,]*2,
                                            ifelse(abs(diff.perc)<= 0.001 & abs(diff.pix.hist[u,])<= 20 & sign(diff.pix.hist[u,])==sign(diff.pix.hist[u-1,]), (korr.hist[u-1,]/2)+(korr.hist[u-1,]/2)*proportion,
                                                   ifelse(change.perc< 20& sign(diff.perc)==sign(diff.p.hist[u-1,]),korr.hist[u-1,]*2,
                                                          ifelse(change.perc< 40& change.perc >= 20 & sign(diff.perc)==sign(diff.p.hist[u-1,]), korr.hist[u-1,]+(korr.hist[u-1,]*proportion),
                                                                 ifelse(sign(diff.pix.hist[u,])  !=sign(diff.pix.hist[u-1,]), -1* korr.hist[u-1,]*proportion,
                                                                        korr.hist[u-1,]))))))), mode="numeric") 
-    
-    
-    
-    
+    }else if (korr_iter == 2){
+	korr <- as.vector(ifelse(diff.pix.hist[u,]== 0 , 0,
+                             ifelse(diff.pix.hist[u,]!=0 & korr.hist[u-1,]==0,-1*sign(diff.perc)*1/sample(50:150, 1),
+                                    ifelse(better==FALSE & sign(diff.pix.hist[u,])==sign(diff.pix.hist[u-1,]), korr.hist[u-1,]*2,
+                                           ifelse(abs(diff.perc)<= 0.001 & abs(diff.pix.hist[u,])<= 20 & sign(diff.pix.hist[u,])==sign(diff.pix.hist[u-1,]), (korr.hist[u-1,]/2)+(korr.hist[u-1,]/2)*proportion,
+                                                       ifelse(change.perc < 40 & sign(diff.perc)==sign(diff.p.hist[u-1,]), korr.hist[u-1,]+(korr.hist[u-1,]*proportion),
+                                                                ifelse(sign(diff.pix.hist[u,])  !=sign(diff.pix.hist[u-1,]), -1* korr.hist[u-1,]*proportion,
+                                                                       korr.hist[u-1,])))))), mode="numeric") 
+	}
+     
     change.p.hist <- rbind(change.p.hist, change.perc)
   }
   
-  iter <- iter + korr;
+  iter <- iter + korr ;
+  iter <- as.numeric (ifelse(iter <=-1, -1, ifelse(iter>=1,1, iter)))
   
   #save history
   korr.hist <- rbind(korr.hist, korr)
@@ -254,17 +267,29 @@ repeat {
   #initialize next u sequence
   u=u+1;
   #stop argument iteration 
-  if (max(abs(diff.perc),na.rm=TRUE) < 0.001 & abs(diff.pix [7]) <= 1 & max(abs(diff.pix),na.rm=TRUE)<=10)  {
+  
+  if (max(abs(diff.perc),na.rm=TRUE) < stop.crit[1] & abs(diff.pix [min.demand]) <= stop.crit[2] )  {
     break;
   }
-  if (abs(diff.pix [7]) <= 1 & max(abs(diff.pix),na.rm=TRUE)<=10){
+  if (abs(diff.pix [min.demand]) <= stop.crit[2])& max(abs(diff.pix),na.rm=TRUE)<=stop.crit[3])){
     break;
   }
-  # stop argument iteration if ITERmax reached
-  if (u > iter.max) { 
-    break;
-  }
-}# next iteration over "u"
+  # stop argument iteration if ITERmax reached and take the ITER with the minimum deviation from the demand from all iterations 
+    if (u > iter.max) {
+        current.log <- log1[(nrow(log1)-iter.max+1):nrow(log1),]
+        iterfinal_index <-  which.min(rowSums(abs(current.log[,2:(layer+1)])))
+        iterfinal <- current.log[iterfinal_index, (2*layer+2):(3*layer+1)]
+        print(iterfinal)
+        for (i in 1:layer){ 
+			p2_vector[,i] <- p_vector[,i]+ as.numeric(iterfinal[i]);
+        }	    
+        log.tmp <- as.vector(c(I(iter.max+1), current.log [iterfinal_index,2:(3*layer+1)]), mode="numeric")
+        log1 <- rbind(log1, log.tmp)
+        print("break")
+        print(log.tmp )
+        break;
+      }
+    }# next iteration over "u"
 #stop cluster
 stopCluster(cl);
 print("allocation done")
