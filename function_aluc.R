@@ -20,15 +20,16 @@
 
 #argument | description 
 #----- | ----- 
-#lc | categorical RasterLayer of the initial Land Use Classes  
-#suit | either a RasterStack or a list of RasterStacks(for each year) of the probabilities for the modeled land use classes resulting from the statistical modelling. The datatype should be Float (FLT4S). The names of the layers should correspond to the landuse/cover classes as follows: "lc1", "lc2", "lc3",..  
+#lc | categorical RasterLayer of the initial Land Use/Cover Classes  
+#suit | either a RasterStack or a list of RasterStacks(for each year) of the probabilities for the modeled land use/cover classes resulting from the statistical modelling. The data type should be Float (FLT4S). The names of the layers should correspond to the landuse/cover classes as follows: "lc1", "lc2", "lc3",..  
 #spatial | either a RasterLayer or a list of RasterLayers(for each year) of locations where no land sue change is allowed (i.e. Protected Areas) containing the values 0 for c areas where conversions are allowed and 1 for areas where conversions are not allowed
-#demand | matrix specifying the amount of pixel for each land use class in the subsequent modelling steps. Columns are land use classes, number of rows equal the number of modelling steps. Values should be integer.
+#demand | matrix specifying the amount of pixel for each land use/cover class in the subsequent modelling steps. Columns are land use/cover classes, number of rows equal the number of modelling steps. Values should be integer.
 #elas | vector containing values referring to the conversion elasticity of the land use/cover classes. 0: easy to convert, 0.5 : medium to convert, 1: difficult to convert.
-#traj | matrix describing the trajectories of land use. Rows: initial land use/cover, Columns: following land use/cover. Values define the years of transition, e.g. 0: no transition allowed, 1: transition allowed after first iteration, 10: transition allowed after 10 iterations.
+#traj | matrix describing the trajectories of land use/cover. Rows: initial land use/cover, Columns: following land use/cover. Values define the years of transition, e.g. 0: no transition allowed, 1: transition allowed after first iteration, 10: transition allowed after 10 iterations.
 #nochange.lc | vector with integer numbers of stable classes, e.g. water.
-#init.years | factor to set the initial number of years the pixels are under the specific land use at the beginning of the modelling.
-#iter.max | integer number specifying the maximum number of iteration until the allocation of land use is stopped
+#init.years | factor to set the initial number of years the pixels are under the specific land use/cover at the beginning of the modelling.
+#stop.crit | vector containing 3 values. the first one to the max deviation of allocated land use/cover to the demand, the second one to the maximum deviation of pixels for the smallest demand class, and the third to the maximum deviation of each demand class.
+#iter.max | integer number specifying the maximum number of iteration until the allocation of land use/cover is stopped
 #ncores | integer number specifying the number of cores to us during processing
 #print.log | TRUE/FALSE if tail of log file is printed during processing
 #writeRaster | TRUE/FALSE if scenario output raster should be written to the working directory during iteration

@@ -1,6 +1,6 @@
 alucR - allocation of land use change 
 ---
-# alucR
+
 alucR - Project is a first step to implement a Land Use/Cover Change Model in R (http://www.r-project.org). 
 We have been following the basic framework provided by Verburg et al. (2002). The code uses basic R-language and packages and is fully documented. This makes
 it possible to easily adapt the code to the users specific needs. 
@@ -22,7 +22,8 @@ init.years | factor to set the initial number of years the pixels are under the 
 stop.crit | vector containing 3 values. the first one to the max deviation of allocated land use/cover to the demand, the second one to the maximum deviation of pixels for the smallest demand class, and the third to the maximum deviation of each demand class.
 iter.max | integer number specifying the maximum number of iteration until the allocation of land use/cover is stopped
 ncores | integer number specifying the number of cores to us during processing
-print.log | TRUE/FALSE if tail of log file is printed during processing
+print.log | TRUE/FALSE if log file is printed during processing
+plot | TRUE/FALSE if iter (weights) are plotted during iteration 
 writeRaster | TRUE/FALSE if scenario output raster should be written to the working directory during iteration
 
 ## Output: 
@@ -33,12 +34,12 @@ list of:
 
 ##Procedure
 1. Non-Spatial Domain:  
-  the amount of land use/cover change for the land use/cover scenarios (row numbers represent modelling steps) has to be provided externally in form of a matrix. Vaules correspond to Pixel of land use/cover in the respective year. Options to derive possible change of land use/cover are manifold. One of the most simple assumptions of future land use/cover amount could follow a simple extrapolation of trends from known from "historic" datasets or similar informations.
+  the amount of land use/cover change for the land use/cover scenarios (row numbers represent modelling steps) has to be provided externally in form of a matrix. Vaules correspond to Pixel of land use/cover in the respective year. Options to derive possible scenarios of land use/cover amounts are manifold. One of the most simple assumptions of future land use/cover could follow a simple extrapolation of trends known from "historic" datasets or similar informations.
 
 2. Spatial Domain:  
-2.1. alucR takes as input data a current land-cover map and a raster stack of land use/cover "suitability" for each land use/cover class for which we want to generate   the scenario. The suitability raster usually result from a statistical analysis, e.g logistic regression (to estimate the probability of a pixel to be under a certain land use/cover), or similar approaches, representing continuous values between 0 an 1.  
-  A preliminary land use/cover  scenario is generated assigning the land use/cover class which has the highest class probability from the suitability stack for each pixel to the scenario map. The amount of land use/cover is then compared with the requested demand and the suitability layer are iteratevily weighted until the scenario land use/cover classes ~equals the demand requirements. The stop criterium is currently defined as either deviating not more than 0.3% from the amount specified in the demand matrix, plus having not more than 1 pixel difference for the smallest land use/cover class, or deviating less than 10 pixels, plus having not more than 1 pixel difference for the smallest land use/cover class.      
-2.2. Elasticities refer to the conversion impediments of one land use/cover to another. Example: It might be easy to convert pasture areas to cropland, but very cost intensive to covert urban areas to pasture.  
+2.1. alucR takes as input data a current land-cover map and a raster stack of land use/cover "suitability" for each land use/cover class for which we want to generate the scenarios. The suitability raster usually result from a statistical analysis, e.g logistic regression (to estimate the probability of a pixel to be under a certain land use/cover), or similar approaches, representing continuous values between 0 an 1.        
+  A preliminary land use/cover  scenario is generated assigning the land use/cover class which has the highest class probability from the suitability stack for each pixel to the scenario map. The amount of land use/cover is then compared with the requested demand and the suitability layer are iteratively weighted until the scenario land use/cover classes ~equals the demand requirements. The stop criterium is currently defined as either deviating not more than 0.3% from the amount specified in the demand matrix, plus having not more than 1 pixel difference for the smallest land use/cover class, or deviating less than 10 pixels, plus having not more than 1 pixel difference for the smallest land use/cover class. If this criteria are not reached iter.max will stop the iteration after the defined number of iteartion (default=100). In this case the map with the scenario map with smalles deviation from the requested demand will be outputed.       
+2.2. Elasticities refer to the conversion impediments of one land use/cover to another. Example: It might be relatively easy to convert pasture areas to cropland, but very cost intensive to covert urban back to another land use.  
 2.3. Spatial Restrictions refer to Protected areas or other areas where no change of land use/cover is allowed during the simulation. These areas are masked before the new allocation of land use/cover is calculated and later added to scenario rasters.  
 2.4. Trajectories define after how many years a land use/cover class can change to another land use/cover class and, if set to 0 that no-change to that land use/cover class is allowed. Example: to change from secondary forest to primary fores we may define a minimum of 10 years to pass before we consider the ixel primary forest again. Or we may not allow urban to change back to another land use/cover class.  
 2.5. No change or stable classes are masked out at the beginning of the function and added at the end. You do not need to provide a demand for these classes. Examples might be "water" or "clouds" (resulting from a land cover classification).  

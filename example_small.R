@@ -1,8 +1,27 @@
 #author: florian.gollnow@geo.hu-berlin.de
 
+# Landuse/cover classes 
+# LC1 Forest
+# LC2 Secondary Vegetation
+# LC3 Pasture
+# LC4 Cropland
+# LC5 Clouds
+# LC6 Water
+# LC7 Urban
+# LC8 Other
+# The land use/cover data is a reclassified TerraClass product of INPE http://www.inpe.br/cra/projetos_pesquisas/terraclass2010.php    
+
+
+
 
 #example script:
-setwd(".../small")
+setwd("C:/Users/geo_flgo/Documents/GitHub/alucR/example_data/small")
+
+library(rgdal)
+library(sp)
+library(raster)
+library(parallel)
+
 
 lc<- raster("tc08_aggregated.tif" )
 suit<- stack("suitability_stack.tif"); names(suit)<- c("lc1","lc2","lc3","lc4","lc7","lc8")
@@ -13,7 +32,7 @@ elas<- read.csv("elas.csv",row.names=1)
 traj <- read.csv("trajectories.csv",row.names=1)
 
 
-scenarios <- aluc(lc=lc, suit=suit, spatial=spatial,demand=as.matrix(demand[c(1:3),]), elas=as.matrix(elas), traj=as.matrix(traj), nochange.lc=c(5,6), init.years=5, ncores=detectCores()/4,iter.max=100, writeRaster=FALSE, korr_iter=1)
+scenarios <- aluc(lc=lc, suit=suit, spatial=spatial,demand=as.matrix(demand), elas=as.matrix(elas), traj=as.matrix(traj), nochange.lc=c(5,6), init.years=5, ncores=detectCores()/2,iter.max=100, writeRaster=FALSE, korr_iter=2)
 
 scenario.raster <- scenarios[[1]] 
 
