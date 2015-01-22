@@ -49,7 +49,7 @@ library(raster)
 library(parallel)
 ####
 
-aluc <- function (lc, suit, spatial, demand, elas=rep(0, max(lc_cat)), traj=matrix(data=1, ncol=max(lc_cat), nrow=max(lc_cat)), nochange.lc=c(), init.years= 5,  stop.crit=c(0.003 , 1, 10),iter.max=100, ncores=detectCores(), print.log=TRUE, plot=TRUE, writeRaster=TRUE, korr_iter=1){
+aluc <- function (lc, suit, spatial, demand, elas=rep(0, max(lc_cat)), traj=matrix(data=1, ncol=max(lc_cat), nrow=max(lc_cat)), nochange.lc=c(), init.years= 5,  stop.crit=c(0.0003 , 1, 10),iter.max=100, ncores=detectCores(), print.log=TRUE, plot=TRUE, writeRaster=TRUE, korr_iter=1){
   
   epoche=1
   
@@ -82,7 +82,10 @@ aluc <- function (lc, suit, spatial, demand, elas=rep(0, max(lc_cat)), traj=matr
     
     
     #mask NA's from p_vector
-    if (all(complete.cases(data_vector)==FALSE)){
+    #if (all(complete.cases(data_vector)==FALSE)){
+    #  p_vector [is.na(data_vector), ] <- NA
+    #}
+    if (all(complete.cases(data_vector))==FALSE){
       p_vector [is.na(data_vector), ] <- NA
     }
     
@@ -249,9 +252,9 @@ aluc <- function (lc, suit, spatial, demand, elas=rep(0, max(lc_cat)), traj=matr
       
       if(plot==TRUE){
         plot(0,0,xlim = c(2,iter.max),ylim = c(-1.0,1.0),ylab="iter", xlab="iteration", type = "n")
-        legend("topright", legend=paste("LC",lc_cat, sep=""), col=rainbow(length(lc_cat)), pch=15)
+        legend("topright", legend=paste("LC",lc_cat, sep=""), col=terrain.colors(length(lc_cat)), pch=15)
         for (i in 1:length(lc_cat)){
-          lines(c(1:nrow(iter.hist)),iter.hist[,lc_cat[i]],col=rainbow(length(lc_cat))[i],type = 'l', lwd=1.5);
+          lines(c(1:nrow(iter.hist)),iter.hist[,lc_cat[i]],col=terrain.colors(length(lc_cat))[i],type = 'l', lwd=2);
         }
       }
       
