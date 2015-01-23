@@ -49,7 +49,7 @@ library(raster)
 library(parallel)
 ####
 
-aluc <- function (lc, suit, spatial, demand, elas=rep(0, max(lc_cat)), traj=matrix(data=1, ncol=max(lc_cat), nrow=max(lc_cat)), nochange.lc=c(), init.years= 5,  stop.crit=c(0.0003 , 1, 10),iter.max=100, ncores=detectCores(), print.log=TRUE, plot=TRUE, writeRaster=TRUE, korr_iter=1){
+aluc <- function (lc, suit, spatial=c(), demand, elas=rep(0, max(lc_cat)), traj=matrix(data=1, ncol=max(lc_cat), nrow=max(lc_cat)), nochange.lc=c(), init.years= 5,  stop.crit=c(0.0003 , 1, 10),iter.max=100, ncores=detectCores(), print.log=TRUE, plot=TRUE, writeRaster=TRUE, korr_iter=1){
   
   epoche=1
   
