@@ -121,8 +121,10 @@ aluc <- function (lc, suit, spatial=c(), demand, elas=rep(0, max(lc_cat)), traj=
     print ("spatial restrictions")
     #####
     #Spatial restrictions
+	if (class(sp.rest_vector)!="NULL"){
     sp.rest_index <- which(!is.na(sp.rest_vector));
     p_vector[sp.rest_index,] <- NA;
+	}
     
     #adjust demand to spatial restrictions
     lc.sp.rest <- tabulate(data_vector[sp.rest_index], nbins=max(lc_cat))
