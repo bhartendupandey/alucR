@@ -4,7 +4,7 @@ alucR - allocation of land use change
 alucR - Project is a first step to implement a Land Use Change Model in R (http://www.r-project.org). We have been following the basic framework provided by Verburg et al. (2002). Land use is hereby spatially allocated based on its its location based competitive advatages following the suitability of a certain cell for the specific land use. Suitability might be assessd using statistical methods (for example) or other modelling techniques. The amount of land use to be allocated needs to be estimated for the total study area and provided externally. Natural land cover and possible succession stages are modelled based on the temporal trajectories of succession stages defined before. 
 The code uses basic R-language and packages and is fully documented. This makes it possible to easily adapt the code to the users specific needs. 
 
- TO USE THE FUNCTION run the code within alucR_function.R in your R-console.   
+ TO USE THE FUNCTION run the code alucR_function.R in your R-console.   
  Dependencies: raster package; parallel package; rgdal package; sp package
 
 # Function definition:
