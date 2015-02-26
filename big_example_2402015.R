@@ -32,7 +32,7 @@ spatial <- raster("pa_all.tif")
 demand<- read.csv("lu_demand.csv", header=T, row.names=1)
 #names(demand)<- c("lc3", "lc4", "lc7")
 elas <- read.csv("elasticities.csv", header=F)
-trajectories <-  read.csv("trajectories.csv", header=F)
+traj <-  read.csv("trajectories.csv", header=F)
 nochange.lc <- c("lc5","lc6","lc8") # müssen ausmaskiert werden und später wieder eingesetzt
 natural.lc <- c("lc1","lc2")
 
