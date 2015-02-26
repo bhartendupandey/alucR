@@ -155,7 +155,7 @@ while (epoche <= nrow(demand)){
     # same as length (lu_suit) number of suitability layers to be modeled
     #lu_suit_l <- ncol(p_vector)
     # pixel for all land use/cover classes
-    lc_pix <- tabulate(data_vector, nbins=max(data_vector)) 
+	lc_pix <- tabulate(data_vector, nbins=max(data_vector, na.rm=TRUE)) 
     # total amount of pixels (excl. NAs)
     lc_n <- sum(lc_pix)
     # unique classes land use/cover classes
