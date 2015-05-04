@@ -119,7 +119,7 @@ while (epoche <= nrow(demand)){
     data_vector <- if (epoche==1) {
       getValues(lc)
     }else {
-      tprop_previous_vector # getValues (new.data) # change to "tprop_previous_vector" or "tprop_vector" no need to read raster values, since they are stored already
+      tprop.previous_vector # getValues (new.data) # change to "tprop.previous_vector" or "tprop_vector" no need to read raster values, since they are stored already
     }
     p_vector <-   if(class(suit)=="RasterStack" | class(suit)=="RasterBrick"){ 
       getValues(suit) # if only one stack is specified
@@ -188,7 +188,7 @@ while (epoche <= nrow(demand)){
       sp.rest_index <- which(!is.na(sp.rest_vector));
       p_vector[sp.rest_index,] <- NA;
       p.natural [sp.rest_index] <- NA
-    }
+    } else { sp.rest_index <- c()}
 #####
 #  1.5 Adjusting demand of land use
 #####
@@ -201,9 +201,14 @@ while (epoche <= nrow(demand)){
 #####
 #  	1.5.2 Adjust for spatial restrictions(4.3)
 #####
+    if (length(sp.rest_vector) > 0 ){
     lc.sp.rest <- tabulate(data_vector[sp.rest_index], nbins=max(lc_unique))
     demand.adj <- demand[epoche,] - lc.sp.rest [sort(lu_suit)]
     natural.adj <- natural.d - sum(lc.sp.rest[natural])
+    } else {
+        demand.adj <- demand[epoche,]
+        natural.adj <- natural.d
+    }
     if (sign(natural.adj)== -1) {print("land use cannot be allocated")}
     #
     demand.new <- as.integer(cbind(demand.adj, natural.adj))
@@ -235,8 +240,8 @@ while (epoche <= nrow(demand)){
         for (a in 1:length(traj_ind)){
           # set p_vector at the specific location for the specific layer  to NA if the amount of years is not reached
           p_vector[cat_index, traj_ind[a]]<- ifelse (trans.years_vector[cat_index] < traj[lc_unique[i], lu_suit[a]], NA, p_vector[cat_index, traj_ind[a]])
-          #cat(i) 
-        }}
+        }
+		}
     }
 #####
 #  	1.6.2 Trajectories for natural vegetation
@@ -247,9 +252,8 @@ while (epoche <= nrow(demand)){
       if (length(traj_ind) > 0){ 
         cat_index <- which(tprop.previous_vector==lc_unique[i])
         p.natural[cat_index] <- ifelse (trans.years_vector[cat_index] < min(traj[lc_unique[i], natural]), NA, p.natural[cat_index])
-        #cat(i)
-        #print(trans.years_vector[cat_index] < min(traj[lc_unique[i], natural]))
-      }}
+        }
+		}
 #####
 #  1.7 Add elasticities
 #####
@@ -267,6 +271,11 @@ while (epoche <= nrow(demand)){
 #  1.8 Combine land use suitability and natural vegetation layer
 #####
   p_vector.N <- cbind( p_vector, p.natural)
+  #normalize p_vector.N
+  for (i in c(1:ncol(p_vector.N))) {
+      stretch <- 1/max(p_vector.N[,i],na.rm=TRUE);
+      p_vector.N[,i] <- p_vector.N[,i]*stretch;
+    }
     
 ###################################################################################
 #2. Allocation sub module 
@@ -291,7 +300,7 @@ while (epoche <= nrow(demand)){
 #  	2.2.1 Initiate & start iteration
 #####
       # initialize iteration
-      u <- 1
+      u = 1
       lu_suit.N <- 1:length(lu.N)# layers of suitability including natural veg. for later use
       # empty vectors
       logfile1 <- c()
@@ -356,7 +365,7 @@ while (epoche <= nrow(demand)){
                                                                               adj.p.hist[u-1,]))))))), mode="numeric") 
           change.p.hist <- rbind(change.p.hist, change.perc)
         }
-        # adjust ther iter values for 
+        # adjust iter values for 
         iter <- iter + adj.p
         iter <- as.numeric (ifelse(iter <=-2, -2, ifelse(iter>=2,2, iter))) # upper and lower bound of iter (should never be reached)
         ###
@@ -420,7 +429,7 @@ while (epoche <= nrow(demand)){
 #####
 #  2.3 Run allocation module (defined above)
 #####
-    allocation <- allocation.module (p_vector.N=p_vector.N,lu.N=lu.N ,demand.new=demand.new, stop.crit=stop.crit, iter.max=iter.max, ncores=ncores, print.plot=print.plot, print.log=print.log)
+    allocation <- allocation.module (p_vector.N= p_vector.N,lu.N= lu.N ,demand.new= demand.new, stop.crit= stop.crit, iter.max= iter.max, ncores= ncores, print.plot= print.plot, print.log= print.log)
 
 #####################################################################################
 #3. Post-processing
@@ -451,17 +460,23 @@ while (epoche <= nrow(demand)){
     pseudo.index <- which(is.element(tprop_vector, pseudo.N))
     for (i in 1:length(pseudo.index)){
       #can before.n be translated to natural 
-      for (a in length(natural):1){
+      for (a in length(natural):2){
         tprop_vector[pseudo.index[i]] <- 
-          ifelse(traj[tprop.previous_vector[pseudo.index[i]], natural[a]] < trans.years_vector[i], natural[a], tprop_vector[pseudo.index[i]])
-        #cat(i)
+          ifelse(traj[natural[a], tprop.previous_vector[pseudo.index[i]]] < trans.years_vector[pseudo.index[i]], natural[a-1], tprop.previous_vector[pseudo.index[i]])
+        #cat(i) 
       }}
+    if (is.element (tprop_vector, pseudo.N)) {print( "error in natural vegetation module")}
+    # tprop_vector[which(tprop_vector==9)] <- natural[length(natural)]
 #####
 #  3.4 Saving results and preparing next epoche
 #####
 #  	3.4.1 Updating transition years vector
 #####
-    transition.years_vector <- ifelse(tprop_vector==tprop.previous_vector, trans.years_vector + 1, 1) #compare this allocation for transistion years, inc if changed, reset to 1 if change
+    trans.years_vector <- ifelse(tprop_vector==tprop.previous_vector, trans.years_vector + 1, 1) #compare this allocation for transistion years, inc if changed, reset to 1 if change
+	##write transition years as raster file
+	#new.transition <- lc
+	#new.transition <- setValues(new.transition, trans.years_vector)
+	#writeRaster(new.transition, paste("transition", epoche, ".tif", sep=""), overwrite=TRUE)
 #####
 #  	3.4.2 Save final allocation result as raster
 #####
@@ -473,7 +488,7 @@ while (epoche <= nrow(demand)){
     assign(paste("scenario", epoche, sep=""), new.data)
       
     # now set previous to this epoche and start next
-    tprop_previous_vector <- tprop_vector;
+    tprop.previous_vector <- tprop_vector;
     
     print("epoche done")
     #initialize new epoche
