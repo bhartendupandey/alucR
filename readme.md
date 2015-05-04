@@ -92,7 +92,7 @@ Natural land cover is modeled as a function of land use demands (Natural vegetat
 ################################      
   
 ## Outlook
-The current code provides a snapshot of the development and will further be updated and documented. 
+The current code provides a running snapshot of the development and will further be updated and documented. 
 
 ### Reference:  
 Verburg PH, Soepboer W, Veldkamp A, Limpiada R, Espaldon V, Mastura, Sharifah S. A. (2002) Modeling the Spatial Dynamics of Regional Land Use: The CLUE-S Model. Environmental Management, vols 30(3):391-405
