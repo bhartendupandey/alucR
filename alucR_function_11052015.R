@@ -162,8 +162,7 @@ while (epoche <= nrow(demand)){
     lc_unique <- sort(unique(data_vector))
     #?	# +1 pseudo natural layer for iteration algorithm
     pseudo.N <- max(lc_unique) + 1
-    lu.N <- c(lu_suit,  pseudo.N) # class numbers  of all classes to be modeled (incl. pseudo natural class)   
-    lu_suit.N <- length(lu.N) 
+    lu.N <- c(lu_suit,  pseudo.N) # class numbers  of all classes to be modelled (incl. pseudo natural class)   
 ######
 #  1.4 Spatial Restrictions   
 ######
@@ -301,10 +300,11 @@ while (epoche <= nrow(demand)){
 #####
       # initialize iteration
       u = 1
-      lu_suit.N <- 1:length(lu.N)# layers of suitability including natural veg. for later use
+      lu_layer.N <- 1:length(lu.N)# layers of suitability including natural veg. for later use
+	  lu_suit.N <- length(lu.N) 
       # empty vectors
       logfile1 <- c()
-      names.log <- c("u", paste("pix.d",lu_suit.N, sep=""), paste("adj.p",lu_suit.N, sep=""), paste("iter",lu_suit.N, sep=""))
+      names.log <- c("u", paste("pix.d",lu_layer.N, sep=""), paste("adj.p",lu_layer.N, sep=""), paste("iter",lu_layer.N, sep=""))
       pix.d.hist <- c()
       perc.d.hist <- c()
       change.p.hist <- c()
@@ -325,7 +325,7 @@ while (epoche <= nrow(demand)){
         if (u==1){
           p2_vector <- p_vector.N
         }else{
-          for (i in lu_suit.N){
+          for (i in lu_layer.N){
             p2_vector[,i] <- p_vector.N[,i]+as.numeric(iter[order(lu.N)[i]])
           }
         }
@@ -375,10 +375,10 @@ while (epoche <= nrow(demand)){
         #####    
         if(print.plot==TRUE){
           plot(0,0,xlim = c(2,iter.max),ylim = c(-1.5,1.5),ylab="iter", xlab="iteration", type = "n")
-          names.legend <- paste ("LC", c (lu.N[-length(lu.N)],"N"))
-          legend("topright", legend=names.legend, col=rainbow(length(lu.N)), pch=15)
-          for (i in 1:length(lu.N)){
-            lines(c(1:nrow(iter.hist)),iter.hist[,order(lu.N)[i]],col=rainbow(length(lu.N))[i],type = 'l', lwd=2);
+          names.legend <- paste ("LC", c (lu.N[-lu_suit.N],"N"))
+          legend("topright", legend=names.legend, col=rainbow(lu_suit.N), pch=15)
+          for (i in 1:lu_suit.N){
+            lines(c(1:nrow(iter.hist)),iter.hist[,order(lu.N)[i]],col=rainbow(lu_suit.N)[i],type = 'l', lwd=2);
           }
         }
         # write logfile
@@ -389,7 +389,7 @@ while (epoche <= nrow(demand)){
         #print tail of logfile
         if(print.log==TRUE){
           #print(tail(logfile1))
-          print(log.tmp [1:max(lu_suit.N)+1])
+          print(log.tmp [1:max(lu_layer.N)+1])
         }
 #####
 #  	2.2.6 Stop iteration when amount of classes ~ demand 
@@ -407,7 +407,7 @@ while (epoche <= nrow(demand)){
           iterfinal_index <-  which.min(rowSums(abs(current.log[,2:(lu_suit.N +1)])))
           iterfinal <- current.log[iterfinal_index, (2*lu_suit.N +2):(3*lu_suit.N +1)]
           if(print.log==TRUE){print(iterfinal)}
-          for (i in 1:lu_suit.N ){ 
+          for (i in 1:lu_suit.N){ 
             p2_vector[,i] <- p_vector.N[,i]+ as.numeric(iterfinal[i]);
           }      
           log.tmp <- as.vector(c(I(iter.max+1), current.log [iterfinal_index,2:(3*lu_suit.N +1)]), mode="numeric")
@@ -465,7 +465,8 @@ while (epoche <= nrow(demand)){
           ifelse(traj[natural[a], tprop.previous_vector[pseudo.index[i]]] < trans.years_vector[pseudo.index[i]], natural[a-1], tprop.previous_vector[pseudo.index[i]])
         #cat(i) 
       }}
-    if (is.element (tprop_vector, pseudo.N)) {print( "error in natural vegetation module")}
+	if (sum(is.element (tprop_vector, pseudo.N))!=0) {print( "error in natural vegetation module")}
+	
     # tprop_vector[which(tprop_vector==9)] <- natural[length(natural)]
 #####
 #  3.4 Saving results and preparing next epoche
