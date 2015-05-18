@@ -137,7 +137,7 @@ while (epoche <= nrow(demand)){
         } else {
           rep(init.years, length (data_vector))
     }
-    tprop.previous_vector <- data_vector
+    if (epoche==1){tprop.previous_vector <- data_vector}
     }
 #####
 #  1.2 Pseudo natural vegetation layer
@@ -155,7 +155,7 @@ while (epoche <= nrow(demand)){
     # same as length (lu_suit) number of suitability layers to be modeled
     #lu_suit_l <- ncol(p_vector)
     # pixel for all land use/cover classes
-	lc_pix <- tabulate(data_vector, nbins=max(data_vector, na.rm=TRUE)) 
+  	lc_pix <- tabulate(data_vector, nbins=max(data_vector, na.rm=TRUE)) 
     # total amount of pixels (excl. NAs)
     lc_n <- sum(lc_pix)
     # unique classes land use/cover classes
@@ -183,7 +183,7 @@ while (epoche <= nrow(demand)){
 #####
 #  	1.4.3 Defined spatial restrictions
 #####
-    if (length(sp.rest_vector) > 0 ){
+    if (length(sp.rest_vector) > 0 ){ # make sure to 
       sp.rest_index <- which(!is.na(sp.rest_vector));
       p_vector[sp.rest_index,] <- NA;
       p.natural [sp.rest_index] <- NA
@@ -197,6 +197,7 @@ while (epoche <= nrow(demand)){
       sum (lc_pix[no.change ])
     }else {c(0)}
     natural.d <- lc_n - nochange.n - sum(demand[epoche,]) 
+    print (paste("Area for natural land cover:", natural.d))
 #####
 #  	1.5.2 Adjust for spatial restrictions(4.3)
 #####
@@ -208,7 +209,7 @@ while (epoche <= nrow(demand)){
         demand.adj <- demand[epoche,]
         natural.adj <- natural.d
     }
-    if (sign(natural.adj)== -1) {print("land use cannot be allocated")}
+    if (sign(natural.adj)== -1) {print("land use cannot be allocated due to spatial restrictions")}
     #
     demand.new <- as.integer(cbind(demand.adj, natural.adj))
 #####
@@ -272,7 +273,7 @@ while (epoche <= nrow(demand)){
   p_vector.N <- cbind( p_vector, p.natural)
   #normalize p_vector.N
   for (i in c(1:ncol(p_vector.N))) {
-      stretch <- 1/max(p_vector.N[,i],na.rm=TRUE);
+      stretch <- 100/max(p_vector.N[,i],na.rm=TRUE);
       p_vector.N[,i] <- p_vector.N[,i]*stretch;
     }
     
@@ -316,6 +317,7 @@ while (epoche <= nrow(demand)){
       min.demand <- as.integer(which.min(demand.new))
       # initialize cluster
       cl <- makeCluster(getOption("cl.cores", ncores))
+      on.exit(stopCluster(cl))
       ########
       # start iteration to allocate the requested amount of land use plus natural vegetation
       repeat {
@@ -333,12 +335,15 @@ while (epoche <= nrow(demand)){
 #  	2.2.3 Evaluate competitive advantages
 #####
         # main routine to identify competitive advantages between pixels for each location
-        tprop_vector <- lu.N[parRapply(cl,p2_vector,FUN=function(w) ifelse(all(is.na(w)),NA,which.max(w)))]
+
+        tprop_vector_tmp <- parRapply(cl,p2_vector,FUN=function(w) ifelse(all(is.na(w)),NA,which.max(w)))
+        tprop_vector <- lu.N[tprop_vector_tmp] 
 #####
 #  	2.2.4 Compare amount of received classes to demand     
 #####
         # evaluate result - how many pixels have been assigned to which class
         n <- tabulate(tprop_vector,nbins=max(lu.N))[sort(lu.N)]
+#print(paste("n:" , n))
         # difference of pixels betwen allocated and requested land use/cover
         pix.d  <- n - demand.new 
         perc.d <- pix.d/demand.new
@@ -349,14 +354,14 @@ while (epoche <= nrow(demand)){
 #  	2.2.5 Adjust iter for next iteration (starting 2.2.2)
 #####
         if(u==1){ # initializing adj.p 
-          adj.p= -1*sign(perc.d)*1/100
+          adj.p= -1*sign(perc.d) # *1/100
         }else{ # modifying adj.p based on prior results
           change.perc <- abs((pix.d.hist[u-1,]-pix.d.hist[u,])/(pix.d.hist[u-1,])*100) 
           proportion <- abs(pix.d.hist[u,])/ colSums(abs(pix.d.hist[c(u,u-1),]),na.rm=TRUE)
           better<- abs(pix.d.hist[u,])< abs(pix.d.hist[u-1,])
           
           adj.p <- as.vector(ifelse(pix.d.hist[u,]== 0 , 0,
-                                    ifelse(pix.d.hist[u,]!=0 & adj.p.hist[u-1,]==0,-1*sign(perc.d)*1/sample(50:150, 1),
+                                    ifelse(pix.d.hist[u,]!=0 & adj.p.hist[u-1,]==0,-1*sign(perc.d)*1/runif(1,0.5,1.5), # sample(50:150, 1)
                                            ifelse(better==FALSE & sign(pix.d.hist[u,])==sign(pix.d.hist[u-1,]), adj.p.hist[u-1,]*2,
                                                   ifelse(abs(perc.d)<= 0.001 & abs(pix.d.hist[u,])<= 20 & sign(pix.d.hist[u,])==sign(pix.d.hist[u-1,]), (adj.p.hist[u-1,]/2)+(adj.p.hist[u-1,]/2)*proportion,
                                                          ifelse(change.perc< 20& sign(perc.d)==sign(perc.d.hist[u-1,]),adj.p.hist[u-1,]*2,
@@ -367,15 +372,19 @@ while (epoche <= nrow(demand)){
         }
         # adjust iter values for 
         iter <- iter + adj.p
-        iter <- as.numeric (ifelse(iter <=-2, -2, ifelse(iter>=2,2, iter))) # upper and lower bound of iter (should never be reached)
-        ###
+        iter <- as.numeric (ifelse(iter <=-200, -200, ifelse(iter>=200,200, iter))) # upper and lower bound of iter (should never be reached)
+        if (all(sign(iter)==-1 | all(sign(iter)==+1))){ # prevent all iter to have the same sign
+          iter[which.min(abs(iter, na.rm=TRUE))] <-  0  
+        }
+                ###
         #save to history
         adj.p.hist <- rbind(adj.p.hist, adj.p)
         iter.hist <- rbind(iter.hist, iter)
         #####    
         if(print.plot==TRUE){
-          plot(0,0,xlim = c(2,iter.max),ylim = c(-1.5,1.5),ylab="iter", xlab="iteration", type = "n")
-          names.legend <- paste ("LC", c (lu.N[-lu_suit.N],"N"))
+          plot(0,0,xlim = c(2,iter.max),ylim = c(-100,100),ylab="iter", xlab="iteration", type = "n")
+          grid()
+          names.legend <- paste ("LC", c (sort(lu.N[-lu_suit.N]),"N"))
           legend("topright", legend=names.legend, col=rainbow(lu_suit.N), pch=15)
           for (i in 1:lu_suit.N){
             lines(c(1:nrow(iter.hist)),iter.hist[,order(lu.N)[i]],col=rainbow(lu_suit.N)[i],type = 'l', lwd=2);
@@ -389,6 +398,7 @@ while (epoche <= nrow(demand)){
         #print tail of logfile
         if(print.log==TRUE){
           #print(tail(logfile1))
+          names(log.tmp) <-  c("u", paste ("LC", c (sort(lu.N[-lu_suit.N]),"N")))
           print(log.tmp [1:max(lu_layer.N)+1])
         }
 #####
@@ -402,7 +412,7 @@ while (epoche <= nrow(demand)){
           break;
         }
         # stop argument iteration if ITERmax reached and take the ITER with the minimum deviation from the demand from all iterations 
-        if (u > iter.max) {
+        if (u >= iter.max) {
           current.log <- logfile1[(nrow(logfile1)-iter.max+1):nrow(logfile1),]
           iterfinal_index <-  which.min(rowSums(abs(current.log[,2:(lu_suit.N +1)])))
           iterfinal <- current.log[iterfinal_index, (2*lu_suit.N +2):(3*lu_suit.N +1)]
@@ -410,6 +420,10 @@ while (epoche <= nrow(demand)){
           for (i in 1:lu_suit.N){ 
             p2_vector[,i] <- p_vector.N[,i]+ as.numeric(iterfinal[i]);
           }      
+          #evaulate best p2_vector
+          tprop_vector_tmp <- parRapply(cl,p2_vector,FUN=function(w) ifelse(all(is.na(w)),NA,which.max(w)))
+          tprop_vector <- lu.N[tprop_vector_tmp] 
+          #
           log.tmp <- as.vector(c(I(iter.max+1), current.log [iterfinal_index,2:(3*lu_suit.N +1)]), mode="numeric")
           logfile1 <- rbind(logfile1, log.tmp)
           if(print.log==TRUE){print("break")
@@ -422,7 +436,7 @@ while (epoche <= nrow(demand)){
 #####
 #  	2.2.7 return allocation vector and logfile
 #####
-     stopCluster(cl);
+     #stopCluster(cl);
      print("allocation done")
      return(list(tprop_vector, logfile1))
   }
@@ -458,15 +472,22 @@ while (epoche <= nrow(demand)){
 #  	3.3.2 Reclassify pseudo natural class based on trajectory and succession order
 #####
     pseudo.index <- which(is.element(tprop_vector, pseudo.N))
+    if(length (natural > 1)){
     for (i in 1:length(pseudo.index)){
+      #i=1
       #can before.n be translated to natural 
       for (a in length(natural):2){
-        tprop_vector[pseudo.index[i]] <- 
-          ifelse(traj[natural[a], tprop.previous_vector[pseudo.index[i]]] < trans.years_vector[pseudo.index[i]], natural[a-1], tprop.previous_vector[pseudo.index[i]])
-        #cat(i) 
-      }}
+        if (traj[natural[a], natural[a-1]] < trans.years_vector[pseudo.index[i]] |
+              tprop.previous_vector[pseudo.index[i]] == natural[a-1]) {
+              tprop_vector[pseudo.index[i]] <- natural[a-1]
+        } else{
+          tprop_vector[pseudo.index[i]] <- natural[a]
+        } 
+      }
+    }
+    }
 	if (sum(is.element (tprop_vector, pseudo.N))!=0) {print( "error in natural vegetation module")}
-	
+    
     # tprop_vector[which(tprop_vector==9)] <- natural[length(natural)]
 #####
 #  3.4 Saving results and preparing next epoche
