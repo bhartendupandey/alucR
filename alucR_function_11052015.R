@@ -317,6 +317,7 @@ while (epoche <= nrow(demand)){
       min.demand <- as.integer(which.min(demand.new))
       # initialize cluster
       cl <- makeCluster(getOption("cl.cores", ncores))
+#cl <- makeCluster(ncores, type = "PSOCK") # "MPI" - to test
       on.exit(stopCluster(cl))
       ########
       # start iteration to allocate the requested amount of land use plus natural vegetation
@@ -374,7 +375,7 @@ while (epoche <= nrow(demand)){
         iter <- iter + adj.p
         iter <- as.numeric (ifelse(iter <=-200, -200, ifelse(iter>=200,200, iter))) # upper and lower bound of iter (should never be reached)
         if (all(sign(iter)==-1 | all(sign(iter)==+1))){ # prevent all iter to have the same sign
-          iter[which.min(abs(iter, na.rm=TRUE))] <-  0  
+          iter[which.min(abs(iter), na.rm=TRUE)] <-  0  
         }
                 ###
         #save to history
