@@ -98,8 +98,8 @@ Natural land cover is modeled as a function of land use demands (Natural vegetat
 The current code provides a running snapshot of the development and will further be updated and documented. 
 
 ##NEXT Steps:
-1. itera weigth cannot have the same sign (negative/positive) for all iter
-2. scaling before alocation algorithm - might be better between 100 and -100 instead of 1 to -1  - better use of the available data space  
+1. set transition maps and scenario maps as global variables. In case of error messages the scenarios can start from the last iteration
+2. stop land use allocation if demand cannot be allocated 
 3. ...
 
 ### Reference:  
