@@ -374,9 +374,10 @@ while (epoche <= nrow(demand)){
         # adjust iter values for 
         iter <- iter + adj.p
         iter <- as.numeric (ifelse(iter <=-200, -200, ifelse(iter>=200,200, iter))) # upper and lower bound of iter (should never be reached)
-        if (all(sign(iter)==-1 | all(sign(iter)==+1))){ # prevent all iter to have the same sign
-          iter[which.min(abs(iter), na.rm=TRUE)] <-  0  
-        }
+        if (all(sign(iter)==-1) | all(sign(iter)==+1)){ # prevent all iter to have the same sign
+         iter[which.min(abs(iter))] <-  0  
+        }        
+
                 ###
         #save to history
         adj.p.hist <- rbind(adj.p.hist, adj.p)
