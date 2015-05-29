@@ -373,15 +373,20 @@ while (epoche <= nrow(demand)){
         }
         # adjust iter values for 
         iter <- iter + adj.p
+        assign("global.iter", iter , envir = .GlobalEnv) 
         iter <- as.numeric (ifelse(iter <=-200, -200, ifelse(iter>=200,200, iter))) # upper and lower bound of iter (should never be reached)
-        if (all(sign(iter)==-1) | all(sign(iter)==+1)){ # prevent all iter to have the same sign
-         iter[which.min(abs(iter))] <-  0  
-        }        
+        if (u > 1){
+        if (all(sign(iter)==-1) | all(sign(iter)==+1)){ # prevent all iter to have the same sign in the second iteration
+          if (all(sign(iter.hist[nrow(iter.hist),])==-1) | all(sign(iter.hist[nrow(iter.hist),])==+1)){              
+            iter[which.min(abs(iter))] <-  0  
+        }}}        
 
                 ###
         #save to history
         adj.p.hist <- rbind(adj.p.hist, adj.p)
         iter.hist <- rbind(iter.hist, iter)
+        assign("global.iter.hist", iter.hist , envir = .GlobalEnv) 
+        iter.hist <-iter.hist
         #####    
         if(print.plot==TRUE){
           plot(0,0,xlim = c(2,iter.max),ylim = c(-100,100),ylab="iter", xlab="iteration", type = "n")
@@ -498,14 +503,16 @@ while (epoche <= nrow(demand)){
 #####
     trans.years_vector <- ifelse(tprop_vector==tprop.previous_vector, trans.years_vector + 1, 1) #compare this allocation for transistion years, inc if changed, reset to 1 if change
 	##write transition years as raster file
-	#new.transition <- lc
-	#new.transition <- setValues(new.transition, trans.years_vector)
+	new.transition <- lc
+	new.transition <- setValues(new.transition, trans.years_vector)
+  assign("global.new.transition", new.transition, envir = .GlobalEnv) 
 	#writeRaster(new.transition, paste("transition", epoche, ".tif", sep=""), overwrite=TRUE)
 #####
 #  	3.4.2 Save final allocation result as raster
 #####
     new.data <- lc
     new.data <- setValues(new.data, tprop_vector)
+    assign("global.new.data", new.data, envir = .GlobalEnv) 
     if (print.plot==TRUE){plot(new.data)}
     if (writeRaster==TRUE){writeRaster(new.data, paste("scenario", epoche, ".tif", sep=""), overwrite=TRUE)}
     # name result 
