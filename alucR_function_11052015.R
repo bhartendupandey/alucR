@@ -386,7 +386,6 @@ while (epoche <= nrow(demand)){
         adj.p.hist <- rbind(adj.p.hist, adj.p)
         iter.hist <- rbind(iter.hist, iter)
         assign("global.iter.hist", iter.hist , envir = .GlobalEnv) 
-        iter.hist <-iter.hist
         #####    
         if(print.plot==TRUE){
           plot(0,0,xlim = c(2,iter.max),ylim = c(-100,100),ylab="iter", xlab="iteration", type = "n")
