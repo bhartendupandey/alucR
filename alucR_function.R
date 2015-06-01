@@ -1,6 +1,6 @@
 # file:     alucR_function.R
 #
-# To use this funcition just source (run) the script in the R-console. 
+# To use this function just source (run) the script in the R-console. 
 #
 # coder:    
 # florian.gollnow@geo.hu-berlin.de
@@ -12,8 +12,8 @@
 #---
 ## alucR
 # alucR - Project is a first step to implement a Land Use Change Model in R (http://www.r-project.org). 
-# We have been following the basic framework provided by Verburg et al. (2002). Land use is modelled seperately to natural vegetation. While land use classes 
-# have ceratain suitability at different locations (depending for example on slope, soil, precipitation or accessibility (road network)) natural vegetation stages are modeled 
+# We have been following the basic framework provided by Verburg et al. (2002). Land use is modelled separately to natural vegetation. While land use classes 
+# have certain suitability at different locations (depending for example on slope, soil, precipitation or accessibility (road network)) natural vegetation stages are modelled 
 # as steps of succession defined in the trajectories (traj) file.  
 # The code uses basic R-language and packages and is fully documented. This makes
 # it possible to easily adapt the code to the users specific needs. 
@@ -26,14 +26,14 @@
 #----- | ----- 
 #lc | categorical RasterLayer of the initial Land Use/Cover Classes  
 #suit | either a RasterStack or a list of RasterStacks(for each year) of the suitabilities for land cover classes (ordered by preferences) resulting from the statistical modelling. The data type should be Float (FLT4S). The names of the layers should correspond to the landuse classes as follows: "lc7", "lc4", "lc3",..  
-#natural | character string defining land cover classes refering to natural vegetation ordered by succession states. example: c("lc1", "lc2")
+#natural | character string defining land cover classes referring to natural vegetation ordered by succession states. example: c("lc1", "lc2")
 #nochange.lc |  character string defining land cover/use classes without suitability layer which are expected to stay unchanged (for example: water). 
 #spatial | either a RasterLayer or a list of RasterLayers(for each year) of locations where no land sue change is allowed (i.e. Protected Areas) containing the values 0 for c areas where conversions are allowed and 1 for areas where conversions are not allowed
 #demand | matrix specifying the amount of pixel for each land use class in the subsequent modelling steps. Columns refer to the land use classes for which there is a suitability layer, number of rows equal the number of modelling steps. Values should be integer.
 #elas | vector containing values referring to the conversion elasticity of the land use/cover classes. There must be specified for all classes in the land cover product. 0: easy to convert, 0.5 : medium to convert, 1: difficult to convert.
 #traj | matrix describing the trajectories of land use/cover. Rows: initial land use/cover (1 to n), Columns: following land use/cover (1 to n). Values define the years of transition, e.g. 0: no transition allowed, 1: transition allowed after first iteration, 10: transition allowed after 10 iterations. must be specified for all land_cover classes.
 #init.years | numeric value or RasterLayer to set the initial number of years the pixels are under the specific land use/cover at the beginning of the modelling.
-#stop.crit | vector containing 3 values. the first one defines the maximum deviation of allocated land use/cover to the demand in percent, the second one the maximum deviation of pixels for the smallest demand class, and the third defiends the maximum deviation of each demand class in pixel.
+#stop.crit | vector containing 3 values. the first one defines the maximum deviation of allocated land use/cover to the demand in percent, the second one the maximum deviation of pixels for the smallest demand class, and the third defines the maximum deviation of each demand class in pixel.
 #iter.max | integer number specifying the maximum number of iteration until the allocation of land use/cover is stopped (in that case the best out of the available allocation is returned)
 #ncores | integer number specifying the number of cores to use during processing
 #print.log | TRUE/FALSE if tail of log file is printed during processing
@@ -386,6 +386,7 @@ while (epoche <= nrow(demand)){
         adj.p.hist <- rbind(adj.p.hist, adj.p)
         iter.hist <- rbind(iter.hist, iter)
         assign("global.iter.hist", iter.hist , envir = .GlobalEnv) 
+        iter.hist <-iter.hist
         #####    
         if(print.plot==TRUE){
           plot(0,0,xlim = c(2,iter.max),ylim = c(-100,100),ylab="iter", xlab="iteration", type = "n")
@@ -478,6 +479,7 @@ while (epoche <= nrow(demand)){
 #  	3.3.2 Reclassify pseudo natural class based on trajectory and succession order
 #####
     pseudo.index <- which(is.element(tprop_vector, pseudo.N))
+	if (length (pseudo.index) >=1){  
     if(length (natural > 1)){
     for (i in 1:length(pseudo.index)){
       #i=1
@@ -491,9 +493,10 @@ while (epoche <= nrow(demand)){
         } 
       }
     }
-    }
+    } 
+	if (natural== 1) {tprop_vector[pseudo.index[i]] <- natural}
 	if (sum(is.element (tprop_vector, pseudo.N))!=0) {print( "error in natural vegetation module")}
-    
+    }
     # tprop_vector[which(tprop_vector==9)] <- natural[length(natural)]
 #####
 #  3.4 Saving results and preparing next epoche
