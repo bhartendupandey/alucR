@@ -1,6 +1,6 @@
 # file:     alucR_function.R
 #
-# To use this function just source (run) the script in the R-console. 
+# To use this funcition just source (run) the script in the R-console. 
 #
 # coder:    
 # florian.gollnow@geo.hu-berlin.de
@@ -13,7 +13,7 @@
 ## alucR
 # alucR - Project is a first step to implement a Land Use Change Model in R (http://www.r-project.org). 
 # We have been following the basic framework provided by Verburg et al. (2002). Land use is modelled separately to natural vegetation. While land use classes 
-# have certain suitability at different locations (depending for example on slope, soil, precipitation or accessibility (road network)) natural vegetation stages are modelled 
+# have certain suitability at different locations (depending for example on slope, soil, precipitation or accessibility (road network)) natural vegetation stages are modeled 
 # as steps of succession defined in the trajectories (traj) file.  
 # The code uses basic R-language and packages and is fully documented. This makes
 # it possible to easily adapt the code to the users specific needs. 
@@ -25,7 +25,7 @@
 #argument | description 
 #----- | ----- 
 #lc | categorical RasterLayer of the initial Land Use/Cover Classes  
-#suit | either a RasterStack or a list of RasterStacks(for each year) of the suitabilities for land cover classes (ordered by preferences) resulting from the statistical modelling. The data type should be Float (FLT4S). The names of the layers should correspond to the landuse classes as follows: "lc7", "lc4", "lc3",..  
+#suit | either a RasterStack or a list of RasterStacks(for each year) of the suitability for land cover classes (ordered by preferences) resulting from the statistical modelling. The data type should be Float (FLT4S). The names of the layers should correspond to the landuse classes as follows: "lc7", "lc4", "lc3",..  
 #natural | character string defining land cover classes referring to natural vegetation ordered by succession states. example: c("lc1", "lc2")
 #nochange.lc |  character string defining land cover/use classes without suitability layer which are expected to stay unchanged (for example: water). 
 #spatial | either a RasterLayer or a list of RasterLayers(for each year) of locations where no land sue change is allowed (i.e. Protected Areas) containing the values 0 for c areas where conversions are allowed and 1 for areas where conversions are not allowed
@@ -124,7 +124,7 @@ while (epoche <= nrow(demand)){
     p_vector <-   if(class(suit)=="RasterStack" | class(suit)=="RasterBrick"){ 
       getValues(suit) # if only one stack is specified
     }else if (class(suit)=="character"){
-      getValues(get(suit[epoche])) # in case different stacks for each episode are specified - possibly usefull if  for example new roads are build
+      getValues(get(suit[epoche])) # in case different stacks for each episode are specified - possibly useful if  for example new roads are build
     }             
     sp.rest_vector <- if(class(spatial)=="RasterLayer"){ 
       getValues(spatial) # spatial restrictions
@@ -284,9 +284,9 @@ while (epoche <= nrow(demand)){
 #####
 # Description: function providing the allocation routine
 #
-# p_vector.N | preprocessed suitability vectors including spatial and trajectory based restriction, elastcities etc.
-# lu.n | class numbers  of all classes to be modeled (incl. pseudo natural class) 
-# demand.new | preprocesses demand file including demand for land use classes plus natural vegetation. Adjusted for spatial restrictions
+# p_vector.N | preprocessed suitability vectors including spatial and trajectory based restriction, elasticities etc.
+# lu.n | class numbers  of all classes to be modelled (incl. pseudo natural class) 
+# demand.new | preprocessed demand file including demand for land use classes plus natural vegetation. Adjusted for spatial restrictions
 # stop.crit | stop criteria
 # iter.max | maximum of iterations
 # ncores | amount of cores
@@ -494,7 +494,7 @@ while (epoche <= nrow(demand)){
       }
     }
     } 
-	if (natural== 1) {tprop_vector[pseudo.index[i]] <- natural}
+	if (length (natural)== 1) {tprop_vector[pseudo.index[i]] <- natural}
 	if (sum(is.element (tprop_vector, pseudo.N))!=0) {print( "error in natural vegetation module")}
     }
     # tprop_vector[which(tprop_vector==9)] <- natural[length(natural)]
@@ -503,18 +503,18 @@ while (epoche <= nrow(demand)){
 #####
 #  	3.4.1 Updating transition years vector
 #####
-    trans.years_vector <- ifelse(tprop_vector==tprop.previous_vector, trans.years_vector + 1, 1) #compare this allocation for transistion years, inc if changed, reset to 1 if change
+    trans.years_vector <- ifelse(tprop_vector==tprop.previous_vector, trans.years_vector + 1, 1) #compare this allocation for transition years, inc if changed, reset to 1 if change
 	##write transition years as raster file
-	new.transition <- lc
-	new.transition <- setValues(new.transition, trans.years_vector)
-  assign("global.new.transition", new.transition, envir = .GlobalEnv) 
+	#new.transition <- lc
+	#new.transition <- setValues(new.transition, trans.years_vector)
+  #assign("global.new.transition", new.transition, envir = .GlobalEnv) 
 	#writeRaster(new.transition, paste("transition", epoche, ".tif", sep=""), overwrite=TRUE)
 #####
 #  	3.4.2 Save final allocation result as raster
 #####
     new.data <- lc
     new.data <- setValues(new.data, tprop_vector)
-    assign("global.new.data", new.data, envir = .GlobalEnv) 
+    #assign("global.new.data", new.data, envir = .GlobalEnv) 
     if (print.plot==TRUE){plot(new.data)}
     if (writeRaster==TRUE){writeRaster(new.data, paste("scenario", epoche, ".tif", sep=""), overwrite=TRUE)}
     # name result 
