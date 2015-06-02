@@ -1,6 +1,6 @@
 # file:     alucR_function.R
 #
-# To use this funcition just source (run) the script in the R-console. 
+# To use this function just source (run) the script in the R-console. 
 #
 # coder:    
 # florian.gollnow@geo.hu-berlin.de
