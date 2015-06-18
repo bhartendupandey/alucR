@@ -362,14 +362,22 @@ while (epoche <= nrow(demand)){
           proportion <- abs(pix.d.hist[u,])/ colSums(abs(pix.d.hist[c(u,u-1),]),na.rm=TRUE)
           better<- abs(pix.d.hist[u,])< abs(pix.d.hist[u-1,])
           
-          adj.p <- as.vector(ifelse(pix.d.hist[u,]== 0 , 0,
+          adj.p <- as.vector(ifelse(pix.d.hist[u,]== 0 , 0, # if pixels are correctly allocated no change
+									# if pixels are not correctly allocated 
+									# if last adj hist == 0 then initialize adj.p hist 
                                     ifelse(pix.d.hist[u,]!=0 & adj.p.hist[u-1,]==0,-1*sign(perc.d)*1/runif(1,0.5,1.5), # sample(50:150, 1)
-                                           ifelse(better==FALSE & sign(pix.d.hist[u,])==sign(pix.d.hist[u-1,]), adj.p.hist[u-1,]*2,
-                                                  ifelse(abs(perc.d)<= 0.001 & abs(pix.d.hist[u,])<= 20 & sign(pix.d.hist[u,])==sign(pix.d.hist[u-1,]), (adj.p.hist[u-1,]/2)+(adj.p.hist[u-1,]/2)*proportion,
-                                                         ifelse(change.perc< 20& sign(perc.d)==sign(perc.d.hist[u-1,]),adj.p.hist[u-1,]*2,
-                                                                ifelse(change.perc< 40& change.perc >= 20 & sign(perc.d)==sign(perc.d.hist[u-1,]), adj.p.hist[u-1,]+(adj.p.hist[u-1,]*proportion),
-                                                                       ifelse(sign(pix.d.hist[u,])  !=sign(pix.d.hist[u-1,]), -1* adj.p.hist[u-1,]*proportion,
-                                                                              adj.p.hist[u-1,]))))))), mode="numeric") 
+									#if the last adjustment did not lead to better results and the sign of pix dif is still the same use the double adj.p from last time
+                                    ifelse(better==FALSE & sign(pix.d.hist[u,])==sign(pix.d.hist[u-1,]), adj.p.hist[u-1,]*2,
+                                    # if the difference is <= 0.001% and <=20 pixel and the sign is the same half of the proportional adjustment              
+									ifelse(abs(perc.d)<= 0.001 & abs(pix.d.hist[u,])<= 20 & sign(pix.d.hist[u,])==sign(pix.d.hist[u-1,]), (adj.p.hist[u-1,]/2)+((adj.p.hist[u-1,]/2)*proportion),
+									# percent change smaller than 20 and the sign is the same, than use the double of last adj.p
+                                    ifelse(change.perc< 20& sign(perc.d)==sign(perc.d.hist[u-1,]),adj.p.hist[u-1,]*2,
+									# percent change is smaller than 40 and larger than 20 - add proportional adj.p to last adj.p
+                                    ifelse(change.perc< 40& change.perc >= 20 & sign(perc.d)==sign(perc.d.hist[u-1,]), adj.p.hist[u-1,]+(adj.p.hist[u-1,]*proportion),
+									# if sign switch adjust proportional  
+                                    ifelse(sign(pix.d.hist[u,])  !=sign(pix.d.hist[u-1,]), -1* adj.p.hist[u-1,]*proportion,
+									# everything else use the last adj.p
+                                    adj.p.hist[u-1,]))))))), mode="numeric") 
           change.p.hist <- rbind(change.p.hist, change.perc)
         }
 		#upper and lower boundaries of adj.p
