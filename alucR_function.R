@@ -13,7 +13,7 @@
 ## alucR
 # alucR - Project is a first step to implement a Land Use Change Model in R (http://www.r-project.org). 
 # We have been following the basic framework provided by Verburg et al. (2002). Land use is modelled separately to natural vegetation. While land use classes 
-# have certain suitability at different locations (depending for example on slope, soil, precipitation or accessibility (road network)) natural vegetation stages are modeled 
+# have certain suitability at different locations (depending for example on slope, soil, precipitation or accessibility (road network)) natural vegetation stages are modelled 
 # as steps of succession defined in the trajectories (traj) file.  
 # The code uses basic R-language and packages and is fully documented. This makes
 # it possible to easily adapt the code to the users specific needs. 
@@ -239,7 +239,8 @@ while (epoche <= nrow(demand)){
         cat_index <- which(tprop.previous_vector==lc_unique[i]) 
         for (a in 1:length(traj_ind)){
           # set p_vector at the specific location for the specific layer  to NA if the amount of years is not reached
-          p_vector[cat_index, traj_ind[a]]<- ifelse (trans.years_vector[cat_index] < traj[lc_unique[i], lu_suit[a]], NA, p_vector[cat_index, traj_ind[a]])
+          p_vector[cat_index, traj_ind[a]]<- ifelse (trans.years_vector[cat_index] < traj[traj_ind[a], lu_suit[a]], NA, p_vector[cat_index, traj_ind[a]])
+          #p_vector[cat_index, traj_ind[a]]<- ifelse (trans.years_vector[cat_index] < traj[lc_unique[i], lu_suit[a]], NA, p_vector[cat_index, traj_ind[a]])
         }
 		}
     }
@@ -371,14 +372,17 @@ while (epoche <= nrow(demand)){
                                                                               adj.p.hist[u-1,]))))))), mode="numeric") 
           change.p.hist <- rbind(change.p.hist, change.perc)
         }
+		#upper and lower boundaries of adj.p
+		adj.p <- ifelse (adj.p < -100, -100, ifelse(adj.p > 100,100, adj.p ))
         # adjust iter values for 
         iter <- iter + adj.p
         assign("global.iter", iter , envir = .GlobalEnv) 
-        iter <- as.numeric (ifelse(iter <=-200, -200, ifelse(iter>=200,200, iter))) # upper and lower bound of iter (should never be reached)
+        iter <- as.numeric (ifelse(iter < -150, -150, ifelse(iter > 150,150, iter))) # upper and lower bound of iter (should never be reached)
         if (u > 1){
         if (all(sign(iter)==-1) | all(sign(iter)==+1)){ # prevent all iter to have the same sign in the second iteration
           if (all(sign(iter.hist[nrow(iter.hist),])==-1) | all(sign(iter.hist[nrow(iter.hist),])==+1)){              
             iter[which.min(abs(iter))] <-  0  
+			adj.p [which.min(abs(iter))] <- 0 # 
         }}}        
 
                 ###
