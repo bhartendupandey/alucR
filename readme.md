@@ -34,9 +34,6 @@ list of:
 [[1]] RasterStack containing the categorical scenarios of land use allocation for the requested years   
 [[2]] matrix of all log information    
 
-## randomly occuring error: (just rerun the function)
-# Error in serialize(data, node$con) : error writing to connection
-
 ##Procedure
 1. Non-Spatial Domain:  
   the amount of land use change for the land use/cover scenarios (row numbers represent modelling steps) has to be provided externally in form of a matrix. Vaules correspond to Pixel of land use in the respective year. Options to derive possible scenarios of land use amounts are manifold. One of the most simple assumptions of future land use could follow a simple extrapolation of trends known from "historic" datasets or similar informations.
