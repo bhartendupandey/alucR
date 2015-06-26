@@ -8,7 +8,7 @@ The code uses basic R-language and packages and is fully documented. This makes 
  Dependencies: raster package; parallel package; rgdal package; sp package
 
 # Function definition:
- aluc (lc, suit, natural, nochange.lc,spatial, demand, elas,traj,init.years,stop.crit,iter.max,ncores, print.log,print.plot,writeRaster)
+ aluc (lc, suit, natural, nochange.lc,spatial, demand, elas,traj,init.years, method, stop.crit,iter.max,ncores, print.log,print.plot,writeRaster)
 
 argument | description 
 ----- | ----- 
@@ -21,9 +21,10 @@ demand | matrix specifying the amount of pixel for each land use class in the su
 elas | vector containing values referring to the conversion elasticity of the land use/cover classes. There must be specified for all classes in the land cover product. 0: easy to convert, 0.5 : medium to convert, 1: difficult to convert.
 traj | matrix describing the trajectories of land use/cover. Rows: initial land use/cover (1 to n), Columns: following land use/cover (1 to n). Values define the years of transition, e.g. 0: no transition allowed, 1: transition allowed after first iteration, 10: transition allowed after 10 iterations. must be specified for all land_cover classes.
 init.years | numeric value or RasterLayer to set the initial number of years the pixels are under the specific land use/cover at the beginning of the modelling.
-stop.crit | vector containing 3 values. the first one defines the maximum deviation of allocated land use/cover to the demand in percent, the second one the maximum deviation of pixels for the smallest demand class, and the third defiends the maximum deviation of each demand class in pixel.
-iter.max | integer number specifying the maximum number of iteration until the allocation of land use/cover is stopped (in that case the best out of the available allocation is returned)
-ncores | integer number specifying the number of cores to use during processing
+method | either "competitive" or "hierarchical"
+stop.crit | only applies for method="competitive": vector containing 3 values. the first one defines the maximum deviation of allocated land use/cover to the demand in percent, the second one the maximum deviation of pixels for the smallest demand class, and the third defines the maximum deviation of each demand class in pixel.
+iter.max | only applies for method="competitive":integer number specifying the maximum number of iteration until the allocation of land use/cover is stopped (in that case the best out of the available allocation is returned)
+ncores | only applies for method="competitive":integer number specifying the number of cores to use during processing
 print.log | TRUE/FALSE if tail of log file is printed during processing
 print.plot | TRUE/FALSE if iter and the final raster are plotted during model execution
 writeRaster | TRUE/FALSE if scenario output raster should be written to the working directory during iteration
@@ -43,7 +44,8 @@ list of:
 2. Spatial Domain:  
 2.1. alucR takes as input data a current land-cover map and a raster stack of land use "suitability" layer for each land use classwhich we want to generate scenarios for. The suitability raster usually result from a statistical analysis, e.g logistic regression (to estimate the probability of a pixel to be under a certain land use/cover), or similar approaches, representing continuous values between 0 an 1.      
 Natural land cover is modeled as a function of land use demands (Natural vegetation = Total Area - Land use - Stable Classe (i.e. water)) and natural success stages defined as temporal trajectores.
-  A preliminary land use/cover  scenario is generated assigning the land use class which has the highest class probability from the suitability stack for each pixel to the scenario map. The amount of land use/cover is then compared with the requested demand and the suitability layer are iteratively weighted until the scenario land use classes ~equals the demand requirements. The stop criterium is currently defined as either deviating not more than 0.03% from the amount specified in the demand matrix, plus having not more than 1 pixel difference for the smallest land use/cover class, or deviating less than 10 pixels, plus having not more than 1 pixel difference for the smallest land use/cover class. If this criteria are not reached the iteration stops after the defined number of iteartion (default=100). In this case the map with the scenario map with smalles summed deviation from the requested demand will be outputed.       
+ Method: Competitive allocation: A preliminary land use/cover  scenario is generated assigning the land use class which has the highest class probability from the suitability stack for each pixel to the scenario map. The amount of land use/cover is then compared with the requested demand and the suitability layer are iteratively weighted until the scenario land use classes ~equals the demand requirements. The stop criterium is currently defined as either deviating not more than 0.03% from the amount specified in the demand matrix, plus having not more than 1 pixel difference for the smallest land use/cover class, or deviating less than 10 pixels, plus having not more than 1 pixel difference for the smallest land use/cover class. If this criteria are not reached the iteration stops after the defined number of iteartion (default=100). In this case the map with the scenario map with smalles summed deviation from the requested demand will be outputed.       
+ Method hirarchical allocation: land use is allocated following the hirachical prefernces. e.g. urban first, followed by crop, followed by pasture. hirarchical allocation is much faster than the competitive one. 
 2.2. Elasticities refer to the conversion impediments of one land use/cover to another. Example: It might be relatively easy to convert pasture areas to cropland, but very cost intensive to covert urban back to another land use. They need to be defined for each landcover class (also stable classes as 0).  
 2.3. Spatial Restrictions refer to protected areas or other areas where no change of land use/cover is allowed during the simulation. These areas are masked before the new allocation of land use/cover is calculated and later added to scenario rasters. Succession stages of natural vegetation is the only possible change within these areas.    
 2.4. Trajectories define after how many years a land use/cover class can change to another land use/cover class and, if set to 0 that no-change to that land use/cover class is allowed. Example: to change from secondary forest to primary fores we may define a minimum of 10 years to pass before we consider the ixel primary forest again. Or we may not allow urban to change back to another land use/cover class.  
@@ -98,7 +100,7 @@ Natural land cover is modeled as a function of land use demands (Natural vegetat
 The current code provides a running snapshot of the development and will further be updated and documented. 
 
 ##NEXT Steps:
-1. set transition maps and scenario maps as global variables. In case of error messages the scenarios can start from the last iteration
+1. stick with rasters instead of convering everything to vectors
 2. stop land use allocation if demand cannot be allocated 
 3. ...
 
