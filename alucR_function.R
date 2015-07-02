@@ -114,7 +114,7 @@ aluc<-function(  lc,
 epoche=1
 logfile1 <- c()
 while (epoche <= nrow(demand)){
-    print(paste("EPOCHE:", epoche , sep=" "))
+    print(paste("EPOCHE:", epoche , "Date:", date() ,sep=" "))
 #####
 #  1.1 Read Data
 ####
@@ -236,13 +236,13 @@ while (epoche <= nrow(demand)){
 for (i in 1:length(lc_unique)){ 
   #i=5
   # identify classes with restricted trajectories to land use
-  traj_ind <-  which(traj[lc_unique[i],lu_suit] != 1) # für 1 an der stelle 2
+  traj_ind <-  which(traj[lc_unique[i],lu_suit] != 1) # fuer 1 an der stelle 2
   #traj_ind
   
   # in case no restriction due to trajectories apply 
   if (length(traj_ind) > 0){  
     # index classes with restricted trajectories
-    cat_index <- which(tprop.previous_vector==lc_unique[i])  # für 2 an der stelle 1
+    cat_index <- which(tprop.previous_vector==lc_unique[i])  # fuer 2 an der stelle 1
     for (a in 1:length(traj_ind)){
       # set p_vector at the specific location for the specific layer  to NA if the amount of years is not reached
       p_vector[ cat_index, traj_ind[a]]<- ifelse (trans.years_vector[cat_index] < traj[lu_suit [traj_ind[a]], lc_unique[i]], NA, p_vector[ cat_index, traj_ind[a]])
@@ -292,6 +292,7 @@ for (i in 1:length(lc.nonatural)){
 #####
 #  2.3 Run allocation module (defined below)
 #####
+    print("start allocation")
     if (method == "hierarchical"){
     allocation <- allocation.hierarchical (p_vector.N= p_vector.N,lu.N= lu.N ,demand.new= demand.new, print.log=print.log)
     } 
