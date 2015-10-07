@@ -464,10 +464,10 @@ allocation.module <- function(p_vector.N ,lu.N ,demand.new, stop.crit, iter.max,
     #  	2.2.2 Read data & add iter
     ##### 
     if (u==1){
-      p2_vector <- p_vector.N
+      p2_suit.N <- suit.N
     }else{
       for (i in lu_layer.N){
-        p2_vector[,i] <- p_vector.N[,i]+as.numeric(iter[order(lu.N)[i]])
+        p2_suit.N[,i] <- p_suit.N[,i]+as.numeric(iter[order(lu.N)[i]])
       }
     }
     #####
