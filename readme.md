@@ -46,13 +46,13 @@ Natural land cover is modeled as a function of land use demands (Natural vegetat
       
  Method hirarchical allocation: land use is allocated following the hirachical prefernces. e.g. urban first, followed by crop, followed by pasture. hirarchical allocation is much faster than the competitive allocation.    
 2.2. Elasticities refer to the conversion impediments of one land use/cover to another. To keep stable patterns of land use, elasticities should be high, while low elasticities make a class more the land use pixel more likely to change. Relative differences between the land use classes schould also be considered: for example - It might be relatively easy to convert pasture areas to cropland, but very cost intensive to covert urban back to another land use. Elasticities  need to be defined for each landcover class (also stable classes as 0).  
-2.3. Spatial Restrictions refer to protected areas or other areas where no change of land use/cover is allowed during the simulation. These areas are masked before the new allocation of land use/cover is calculated and later added to the scenario rasters. Succession stages of natural vegetation is the only possible change within these areas. Spatial restriction don't need to saty the same during the full simulation period, but can vary from simulation step to the next. 
+2.3. Spatial Restrictions refer to protected areas or other areas where no change of land use/cover is allowed during the simulation. These areas are masked before the new allocation of land use/cover is calculated and later added to the scenario rasters. Succession stages of natural vegetation is the only possible change within these areas. Spatial restriction don't need to saty the same during the full simulation period, but can vary from simulation step to the next.      
 
-2.4. Trajectories define after how many years a land use/cover class can change to another land use/cover class. If set to 0no-change to that land use/cover class is allowed. Example: to change from secondary forest to primary fores we may define a minimum of 10 years to pass before we consider the ixel primary forest again. Or we may not allow urban to change back to another land use/cover class.
+2.4. Trajectories define after how many years a land use/cover class can change to another land use/cover class. If set to 0no-change to that land use/cover class is allowed. Example: to change from secondary forest to primary fores we may define a minimum of 10 years to pass before we consider the ixel primary forest again. Or we may not allow urban to change back to another land use/cover class.     
 
-2.5. No change or stable classes are masked out at the beginning of the function and added at the end. You do not need to provide a demand for these classes. Examples might be "water" or "clouds" (resulting from a land cover classification).  
+2.5. No change or stable classes are masked out at the beginning of the function and added at the end. You do not need to provide a demand for these classes. Examples might be "water" or "clouds" (resulting from a land cover classification).      
 
-2.6. Initial years defines the amount of years the current land use is there already (relevant for trajectories 2.4.).
+2.6. Initial years defines the amount of years the current land use is there already (relevant for trajectories 2.4.).     
 
 
 3. Structure of code:
