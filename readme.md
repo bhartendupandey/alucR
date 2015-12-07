@@ -36,6 +36,9 @@ list of:
 [[1]] RasterStack containing the categorical scenarios of land use allocation for the requested years   
 [[2]] matrix of all log information    
 
+an example dataset (rahter big) can be found:
+http://r.geo.hu-berlin.de/~gollnowf/alucR/example.zip 
+
 ##Procedure
 1. ***Non-Spatial Domain*** - amount of land use to allocate:  
   the amount of land use to be allocated for the land use/cover scenarios (row numbers represent modelling steps) has to be provided as data.frame. Vaules correspond to Pixel of land use in the respective sceanrio iteration. Options to derive possible scenarios of land use amounts are manifold. One of the most simple assumptions of future land use could follow a extrapolation of trends known from "historic" datasets or similar informations.
