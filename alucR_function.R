@@ -56,7 +56,7 @@ aluc<-function(  lc,
                  demand=c(), 
                  elas=rep(0, max(lc_unique)), 
                  traj=matrix(data=1, ncol=max(lc_unique, nrow=max(lc_unique))), 
-                 rule.mw = data.frame(), # moving window, for example urban only expands in the urban neighbourhood 
+				 				 rule.mw = data.frame(), # moving window, for example urban only expands in the urban neighbourhood 
                  init.years= 5,  
                  method = "competitive",
                  stop.crit=c(0.0003 , 1, 10),
@@ -65,7 +65,7 @@ aluc<-function(  lc,
                  print.log=TRUE, 
                  print.plot=FALSE, 
                  writeRaster=FALSE) {
-  
+ 
   ###### Model Structure ############
   #1.Pre-processing
   #  1.1 Read data
@@ -82,7 +82,7 @@ aluc<-function(  lc,
   #		1.7 Trajectories of land use change
   #		1.7.1 Trajectories for land use classes
   #		1.7.2 Trajectories for natural vegetation
-  
+
   #	1.8 Combine land use suitability and natural vegetation layer
   #2. Allocation sub module 
   #	2.1 Definition of allocation function
@@ -109,152 +109,153 @@ aluc<-function(  lc,
   #4. Return results and logfile
   #################################   
   
-  ##################  
-  # 1 Preprocessing 
-  #####  
-  epoche=1
-  logfile1 <- c()
-  while (epoche <= nrow(demand)){
+##################  
+# 1 Preprocessing 
+#####  
+epoche=1
+logfile1 <- c()
+while (epoche <= nrow(demand)){
     print(paste("EPOCHE:", epoche , date() ,sep=" "))
-    #####
-    #  1.1 Read Data
-    ####
+#####
+#  1.1 Read Data
+####
     data_vector <- if (epoche==1) {
       getValues(lc)
     }else {
       tprop.previous_vector # getValues (new.data) # change to "tprop.previous_vector" or "tprop_vector" no need to read raster values, since they are stored already
     }
     
-    p_raster <- if(class(suit)=="RasterStack" | class(suit)=="RasterBrick"){ 
+	p_raster <- if(class(suit)=="RasterStack" | class(suit)=="RasterBrick"){ 
       suit
     }else if (class(suit)=="character"){
       get(suit[epoche]) # in case different stacks for each episode are specified - possibly useful if  for example new roads are build
     }  
-    # apply moving window if requested
-    if (nrow(rule.mw) > 0 ){
-      ####### moving window algorthem
-      for (f in 1:nrow(rule.mw)){ #moving window rule.   
-        suitNames <- names(p_raster)
-        if (epoche==1){
-          mat       <- focalWeight(lc, rule.mw[f,2], "circle") # lc class and radius of moving window
-          focalC    <- lc  
-        }else { 
-          mat       <- focalWeight(new.data, rule.mw[f,2], "circle") # lc class and radius of moving window
-          focalC    <- new.data
-        }
-        rclM      <- cbind(sort(unique(focalC)), 0)
-        rclM[which(rclM[,1]==as.numeric(gsub("lc","",rule.mw[f,1]))),2] <- 1 # binary classification for the class of interest
-        focalC    <- reclassify(focalC, rcl=rclM)
-        focalW    <- focal (x=focalC, w=mat, fun=sum, na.rm=TRUE)
-        suitMW    <- subset(p_raster, rule.mw[f,1])
-        suitMWf   <- suitMW* focalW ;
-        suitMWf[Which(suitMWf)==0] <- NA
-        names(suitMWf) <-  as.character(rule.mw[f,1])
-        p_raster <- dropLayer(p_raster, which(names(p_raster)==rule.mw[f,1]))
-        p_raster <- addLayer(p_raster, suitMWf)
-        p_raster <- subset(p_raster, subset= match( suitNames, names(p_raster))) # order to original order
-        rm(suitMW)
-        rm(suitMWf)
-        rm(focalC)
-        rm(focalW)
-      }}
-    
-    # convert to vector
-    p_vector <- getValues(p_raster)
-    #           
+	# apply moving window if requested
+	if (nrow(rule.mw) > 0 ){
+	####### moving window algorthem
+	for (f in 1:nrow(rule.mw)){ #moving window rule.
+	  suitNames <- names(p_raster)
+		if (is.element (as.character(rule.mw[f,1]), suitNames)){
+		if (epoche==1){
+		  mat       <- focalWeight(lc, rule.mw[f,2], "circle") # lc class and radius of moving window
+		  focalC    <- lc  
+		}else { 
+		  mat       <- focalWeight(new.data, rule.mw[f,2], "circle") # lc class and radius of moving window
+		  focalC    <- new.data
+		  }
+		rclM      <- cbind(sort(unique(focalC)), 0)
+		rclM[which(rclM[,1]==as.numeric(gsub("lc","",rule.mw[f,1]))),2] <- 1 # binary classification for the class of interest
+		focalC    <- reclassify(focalC, rcl=rclM)
+		focalW    <- focal (x=focalC, w=mat, fun=sum, na.rm=TRUE)
+		suitMW    <- subset(p_raster, as.character(rule.mw[f,1]))
+		suitMWf   <- suitMW* focalW ;
+		suitMWf[Which(suitMWf)==0] <- NA
+		names(suitMWf) <-  as.character(rule.mw[f,1])
+		p_raster <- dropLayer(p_raster, which(names(p_raster)==rule.mw[f,1]))
+		p_raster <- addLayer(p_raster, suitMWf)
+		p_raster <- subset(p_raster, subset= match( suitNames, names(p_raster))) # order to original order
+		rm(suitMW)
+		rm(suitMWf)
+		rm(focalC)
+		rm(focalW)
+	}}}
+
+	# convert to vector
+	p_vector <- getValues(p_raster)
+	#           
     sp.rest_vector <- if(class(spatial)=="RasterLayer"){ 
       getValues(spatial) # spatial restrictions
     }else if (class(spatial)=="character"){
       getValues(get(spatial[epoche])) # in case different stacks for each episode are specified - possibly useful if the protected area network will be expanded during the modelling experiment
     } 
     if (epoche==1){
-      trans.years_vector <- if (class(init.years)=="RasterLayer"){
+    trans.years_vector <- if (class(init.years)=="RasterLayer"){
         getValues (init.years)
-      } else {
-        rep(init.years, length (data_vector))
-      }
-      if (epoche==1){tprop.previous_vector <- data_vector}
+        } else {
+          rep(init.years, length (data_vector))
     }
-    #####
-    #  1.2 Pseudo natural vegetation layer
-    #####
+    if (epoche==1){tprop.previous_vector <- data_vector}
+    }
+#####
+#  1.2 Pseudo natural vegetation layer
+#####
     p.natural<- rep(0.5, times=length(data_vector)) + runif(length(data_vector), min=0, max=9.9999e-14) # natural vegetation vector 
-    #####
-    #  1.3 Descriptive variables
-    #####
+#####
+#  1.3 Descriptive variables
+#####
     if (epoche==1){
-      #land use classes to be modelled
-      lu_suit <- as.numeric(gsub("lc","",colnames(p_vector)))   # tolower(colnames(p_vector))
-      #no change classes
-      no.change <- as.numeric(gsub("lc","",nochange.lc))
-      #natural land cover classes (as numeric)
-      natural <- as.numeric(gsub("lc","",natural.lc))
-      # same as length (lu_suit) number of suitability layers to be modeled
-      #lu_suit_l <- ncol(p_vector)
-      # pixel for all land use/cover classes
-      lc_pix <- tabulate(data_vector, nbins=max(data_vector, na.rm=TRUE)) 
-      # total amount of pixels (excl. NAs)
-      lc_n <- sum(lc_pix)
-      # unique classes land use/cover classes
-      #only once at first iteration
-      lc_unique <- sort(unique(data_vector))
-      #?	# +1 pseudo natural layer for iteration algorithm
-      pseudo.N <- max(lc_unique) + 1
-      lu.N <- c(lu_suit,  pseudo.N) # class numbers  of all classes to be modelled (incl. pseudo natural class) 
+    #land use classes to be modelled
+    lu_suit <- as.numeric(gsub("lc","",colnames(p_vector)))   # tolower(colnames(p_vector))
+    #no change classes
+    no.change <- as.numeric(gsub("lc","",nochange.lc))
+    #natural land cover classes (as numeric)
+    natural <- as.numeric(gsub("lc","",natural.lc))
+    # same as length (lu_suit) number of suitability layers to be modeled
+    #lu_suit_l <- ncol(p_vector)
+    # pixel for all land use/cover classes
+  	lc_pix <- tabulate(data_vector, nbins=max(data_vector, na.rm=TRUE)) 
+    # total amount of pixels (excl. NAs)
+    lc_n <- sum(lc_pix)
+    # unique classes land use/cover classes
+    #only once at first iteration
+    lc_unique <- sort(unique(data_vector))
+    #?	# +1 pseudo natural layer for iteration algorithm
+    pseudo.N <- max(lc_unique) + 1
+    lu.N <- c(lu_suit,  pseudo.N) # class numbers  of all classes to be modelled (incl. pseudo natural class) 
     }
-    ######
-    #  1.4 Spatial Restrictions   
-    ######
-    #  	1.4.1 NA values in land cover dataset
-    #####
+######
+#  1.4 Spatial Restrictions   
+######
+#  	1.4.1 NA values in land cover dataset
+#####
     if (all(complete.cases(data_vector))==FALSE){ # skip in case no NAs exits 
       p_vector[is.na(data_vector), ] <- NA
       p.natural[is.na(data_vector)]  <- NA
     } 
-    #####
-    #  	1.4.2 Defined stable (no change) classes (set those locations to na in the suitability layers)
-    #####
+#####
+#  	1.4.2 Defined stable (no change) classes (set those locations to na in the suitability layers)
+#####
     if (length(no.change) > 0 ){
       nochange_index <- is.element(data_vector, no.change) 
       p_vector[nochange_index, ] <- NA
       p.natural[nochange_index]  <- NA
     }  
-    #####
-    #  	1.4.3 Defined spatial restrictions (set those locations to na in the suitability layers)
-    #####
+#####
+#  	1.4.3 Defined spatial restrictions (set those locations to na in the suitability layers)
+#####
     if (length(sp.rest_vector) > 0 ){ # make sure to have protected areas defined as value, vile no protection is na
       sp.rest_index <- which(!is.na(sp.rest_vector));
       p_vector[sp.rest_index,] <- NA;
       p.natural [sp.rest_index] <- NA
     } else { sp.rest_index <- c()}
-    #####
-    #  1.5 Adjusting demand of land use
-    #####
-    #  	1.5.1 Add natural land cover demand
-    #####
+#####
+#  1.5 Adjusting demand of land use
+#####
+#  	1.5.1 Add natural land cover demand
+#####
     nochange.n <- if (length(no.change) > 0 ){
       sum (lc_pix[no.change ], na.rm = TRUE)
     }else {c(0)}
     natural.d <- lc_n - nochange.n - sum(demand[epoche,]) 
     print (paste("Area for natural land cover:", natural.d))
-    #####
-    #  	1.5.2 Adjust for spatial restrictions(4.3)
-    #####
+#####
+#  	1.5.2 Adjust for spatial restrictions(4.3)
+#####
     if (length(sp.rest_vector) > 0 ){
-      lc.sp.rest <- tabulate(data_vector[sp.rest_index], nbins=max(lc_unique))
-      demand.adj <- demand[epoche,] - lc.sp.rest [sort(lu_suit)]
-      natural.adj <- natural.d - sum(lc.sp.rest[natural])
+    lc.sp.rest <- tabulate(data_vector[sp.rest_index], nbins=max(lc_unique))
+    demand.adj <- demand[epoche,] - lc.sp.rest [sort(lu_suit)]
+    natural.adj <- natural.d - sum(lc.sp.rest[natural])
     } else {
-      demand.adj <- demand[epoche,]
-      natural.adj <- natural.d
+        demand.adj <- demand[epoche,]
+        natural.adj <- natural.d
     }
     if (sign(natural.adj)== -1) {print("land use cannot be allocated due to spatial restrictions")}
     #
     demand.new <- as.integer(cbind(demand.adj, natural.adj))
-    #####
-    # 1.6 elasticities Matrix for suitability classes 
-    ####	
-    # for suitabilities
+#####
+# 1.6 elasticities Matrix for suitability classes 
+####	
+# for suitabilities
     for (i in lc_unique){
       #i=2
       # identify classes changes in probaility due to elas
@@ -264,16 +265,16 @@ aluc<-function(  lc,
         # index cases where elasticities apply
         cat_index <- which(tprop.previous_vector==i)
         if (length (cat_index) >0 ){
-          for (a in 1:length(elas_ind)){
-            p_vector[cat_index, elas_ind[a]] <- p_vector[ cat_index, elas_ind[a]] + elas [i, lu_suit[elas_ind[a]]] 
-            
+        for (a in 1:length(elas_ind)){
+          p_vector[cat_index, elas_ind[a]] <- p_vector[ cat_index, elas_ind[a]] + elas [i, lu_suit[elas_ind[a]]] 
+        
           }
         }
       }
     }
     
-    
-    # for natural land cover
+
+# for natural land cover
     if (length (natural) > 0 ){
       for (i in lc_unique){
         # identify classes with restricted trajectories to land use
@@ -283,15 +284,15 @@ aluc<-function(  lc,
           # index cases where elasticities apply
           cat_index <- which(tprop.previous_vector==i)  
           if (length (cat_index) >0 ){
-            p.natural[cat_index] <- p.natural[ cat_index] + max( elas [lc_unique[i],natural[elas_ind]])
-          }
+          p.natural[cat_index] <- p.natural[ cat_index] + max( elas [lc_unique[i],natural[elas_ind]])
         }
       }
+    }
     } 
-    
-    #####
-    #  1.7 Trajectories of land use change
-    #####
+	
+#####
+#  1.7 Trajectories of land use change
+#####
     # general:
     # transitions which are not allowed are set to NA in the respective suitability layer (target)
     # transitions different to 1, referring to transition possible after one iteration (year) are identified 
@@ -302,9 +303,9 @@ aluc<-function(  lc,
       # for not allowed changes (100 years more than modelling years)
       traj[traj==0 | is.na (traj)] <- nrow(demand)+ 100 
     }
-    #####
-    #  	1.7.1 Trajectories for land use classes
-    #####
+#####
+#  	1.7.1 Trajectories for land use classes
+#####
     ##
     ##DataSpecific
     ##increase suitability for croplands on current pasture areas by 0.5
@@ -324,12 +325,12 @@ aluc<-function(  lc,
         # index classes with restricted trajectories
         cat_index <- which(tprop.previous_vector==i)  
         if (length (cat_index) >0 ){
-          for (a in 1:length(traj_ind)){
-            # set p_vector at the specific location for the specific layer  to NA if the amount of years is not reached
-            p_vector[ cat_index, traj_ind[a]]<- ifelse (trans.years_vector[cat_index] < traj[i, lu_suit [traj_ind[a]]], NA, p_vector[ cat_index,  traj_ind[a]])
-          }
+        for (a in 1:length(traj_ind)){
+          # set p_vector at the specific location for the specific layer  to NA if the amount of years is not reached
+          p_vector[ cat_index, traj_ind[a]]<- ifelse (trans.years_vector[cat_index] < traj[i, lu_suit [traj_ind[a]]], NA, p_vector[ cat_index,  traj_ind[a]])
         }
       }
+    }
     } 
     # conversion restrictions from any land use cover class to natural vegetation
     for (i in lc_unique){
@@ -338,104 +339,104 @@ aluc<-function(  lc,
       if (traj_ind == FALSE){ 
         cat_index <- which(tprop.previous_vector==lc_unique[i])
         if (length (cat_index) > 0 ){
-          p.natural[cat_index] <- ifelse (trans.years_vector[cat_index] < min(traj[i, natural]), NA, p.natural[cat_index])
-        }
+        p.natural[cat_index] <- ifelse (trans.years_vector[cat_index] < min(traj[i, natural]), NA, p.natural[cat_index])
+      }
       }
     }
-    
-    #  1.8 Combine land use suitability and natural vegetation layer
-    #####
-    p_vector.N <- cbind( p_vector, p.natural)
-    #normalize p_vector.N
-    #  for (i in c(1:ncol(p_vector.N))) {
-    #     stretch <- 100/max(p_vector.N[,i],na.rm=TRUE);
-    #    p_vector.N[,i] <- p_vector.N[,i]*stretch;
-    # }
-    if (method == "hierarchical"){
-      for (i in c(1:ncol(p_vector.N))) {
-        #stretch <- 100/max(p_vector.N[,i],na.rm=TRUE);
-        p_vector.N[,i] <- p_vector.N[,i]*100
-      }
-    }
-    
-    if (method == "competitive"){
-      for (i in c(1:ncol(p_vector.N))) {
-        #stretch <- 100/max(p_vector.N[,i],na.rm=TRUE);
-        p_vector.N[,i] <- p_vector.N[,i]*100  + runif(length(p_vector.N[,i]), min=0, max=9.9999e-14) # random fill of the empty last digits
-      }
-    }    
-    ###################################################################################
-    
-    #####
-    #  2.3 Run allocation module (defined below)
-    #####
+
+#  1.8 Combine land use suitability and natural vegetation layer
+#####
+  p_vector.N <- cbind( p_vector, p.natural)
+  #normalize p_vector.N
+#  for (i in c(1:ncol(p_vector.N))) {
+ #     stretch <- 100/max(p_vector.N[,i],na.rm=TRUE);
+  #    p_vector.N[,i] <- p_vector.N[,i]*stretch;
+   # }
+if (method == "hierarchical"){
+  for (i in c(1:ncol(p_vector.N))) {
+    #stretch <- 100/max(p_vector.N[,i],na.rm=TRUE);
+    p_vector.N[,i] <- p_vector.N[,i]*100
+  }
+  }
+
+if (method == "competitive"){
+for (i in c(1:ncol(p_vector.N))) {
+  #stretch <- 100/max(p_vector.N[,i],na.rm=TRUE);
+  p_vector.N[,i] <- p_vector.N[,i]*100  + runif(length(p_vector.N[,i]), min=0, max=9.9999e-14) # random fill of the empty last digits
+}
+}    
+###################################################################################
+
+#####
+#  2.3 Run allocation module (defined below)
+#####
     print("start allocation")
     if (method == "hierarchical"){
-      allocation <- allocation.hierarchical (p_vector.N= p_vector.N,lu.N= lu.N ,demand.new= demand.new, print.log=print.log)
+    allocation <- allocation.hierarchical (p_vector.N= p_vector.N,lu.N= lu.N ,demand.new= demand.new, print.log=print.log)
     } 
     if (method == "competitive"){
-      allocation <- allocation.module (p_vector.N= p_vector.N,lu.N= lu.N ,demand.new= demand.new, stop.crit= stop.crit, iter.max= iter.max, ncores= ncores, print.plot= print.plot, print.log= print.log)
+    allocation <- allocation.module (p_vector.N= p_vector.N,lu.N= lu.N ,demand.new= demand.new, stop.crit= stop.crit, iter.max= iter.max, ncores= ncores, print.plot= print.plot, print.log= print.log)
     }
-    #####################################################################################
-    #3. Post-processing
-    #####
-    #  3.1 Read results from 2.2
-    #####
+#####################################################################################
+#3. Post-processing
+#####
+#  3.1 Read results from 2.2
+#####
     tprop_vector <- allocation[[1]]
     logfile1  <- rbind (logfile1 , allocation[[2]])    
-    #####
-    #  3.2 Spatial restrictions 
-    #####
-    #  	3.2.1 Add stable classes (1.4.2)
-    #####
+#####
+#  3.2 Spatial restrictions 
+#####
+#  	3.2.1 Add stable classes (1.4.2)
+#####
     tprop_vector[nochange_index] <- data_vector[nochange_index]
-    #####
-    #  	3.2.2 Spatial restrictions (1.4.3)    
-    #####
+#####
+#  	3.2.2 Spatial restrictions (1.4.3)    
+#####
     tprop_vector[sp.rest_index] <- data_vector[sp.rest_index]
-    #####
-    #  3.3 Natural vegetation and succession
-    #####
-    #  	3.3.1 Reclassify all natural to pseudo natural classes
-    #####
+#####
+#  3.3 Natural vegetation and succession
+#####
+#  	3.3.1 Reclassify all natural to pseudo natural classes
+#####
     tprop_vector [is.element(tprop_vector, natural)] <- pseudo.N # natural vegetation to pseudo.N class (including areas of spatial restrictions)
-    ##### 
-    #  	3.3.2 Reclassify pseudo natural class based on trajectory and succession order
-    #####
+##### 
+#  	3.3.2 Reclassify pseudo natural class based on trajectory and succession order
+#####
     pseudo.index <- which(is.element(tprop_vector, pseudo.N))
-    if (length (pseudo.index) >=1){  
-      if(length (natural > 1)){
-        for (i in 1:length(pseudo.index)){
-          #i=1
-          #can before.n be translated to natural 
-          for (a in length(natural):2){
-            if (traj[natural[a], natural[a-1]] < trans.years_vector[pseudo.index[i]] |
-                tprop.previous_vector[pseudo.index[i]] == natural[a-1]) {
+	if (length (pseudo.index) >=1){  
+    if(length (natural > 1)){
+    for (i in 1:length(pseudo.index)){
+      #i=1
+      #can before.n be translated to natural 
+      for (a in length(natural):2){
+        if (traj[natural[a], natural[a-1]] < trans.years_vector[pseudo.index[i]] |
+              tprop.previous_vector[pseudo.index[i]] == natural[a-1]) {
               tprop_vector[pseudo.index[i]] <- natural[a-1]
-            } else{
-              tprop_vector[pseudo.index[i]] <- natural[a]
-            } 
-          }
-        }
-      } 
-      if (length (natural)== 1) {tprop_vector[pseudo.index[i]] <- natural}
-      if (sum(is.element (tprop_vector, pseudo.N))!=0) {print( "error in natural vegetation module")}
+        } else{
+          tprop_vector[pseudo.index[i]] <- natural[a]
+        } 
+      }
+    }
+    } 
+	if (length (natural)== 1) {tprop_vector[pseudo.index[i]] <- natural}
+	if (sum(is.element (tprop_vector, pseudo.N))!=0) {print( "error in natural vegetation module")}
     }
     # tprop_vector[which(tprop_vector==9)] <- natural[length(natural)]
-    #####
-    #  3.4 Saving results and preparing next epoche
-    #####
-    #  	3.4.1 Updating transition years vector
-    #####
+#####
+#  3.4 Saving results and preparing next epoche
+#####
+#  	3.4.1 Updating transition years vector
+#####
     trans.years_vector <- ifelse(tprop_vector==tprop.previous_vector, trans.years_vector + 1, 1) #compare this allocation for transition years, inc if changed, reset to 1 if change
-    ##write transition years as raster file
-    #new.transition <- lc
-    #new.transition <- setValues(new.transition, trans.years_vector)
-    #assign("global.new.transition", new.transition, envir = .GlobalEnv) 
-    #writeRaster(new.transition, paste("transition", epoche, ".tif", sep=""), overwrite=TRUE)
-    #####
-    #  	3.4.2 Save final allocation result as raster
-    #####
+	##write transition years as raster file
+	#new.transition <- lc
+	#new.transition <- setValues(new.transition, trans.years_vector)
+  #assign("global.new.transition", new.transition, envir = .GlobalEnv) 
+	#writeRaster(new.transition, paste("transition", epoche, ".tif", sep=""), overwrite=TRUE)
+#####
+#  	3.4.2 Save final allocation result as raster
+#####
     new.data <- lc
     new.data <- setValues(new.data, tprop_vector)
     #assign("global.new.data", new.data, envir = .GlobalEnv) 
@@ -443,7 +444,7 @@ aluc<-function(  lc,
     if (writeRaster==TRUE){writeRaster(new.data, paste("scenario", epoche, ".tif", sep=""), overwrite=TRUE)}
     # name result 
     assign(paste("scenario", epoche, sep=""), new.data)
-    
+      
     # now set previous to this epoche and start next
     tprop.previous_vector <- tprop_vector;
     
@@ -451,9 +452,9 @@ aluc<-function(  lc,
     #initialize new epoche
     epoche <- epoche+1
   } # end of epoche loop 
-  ######
-  #4. Return results and logfile
-  #####
+######
+#4. Return results and logfile
+#####
   return(list(stack (mget (paste("scenario", rep(1:nrow(demand)),sep=""))), logfile1))
 }
 
@@ -661,7 +662,7 @@ allocation.module <- function(p_vector.N ,lu.N ,demand.new, stop.crit, iter.max,
       log.tmp <- as.vector(c(I(iter.max+1), current.log [iterfinal_index,2:(3*lu_suit.N +1)]), mode="numeric")
       logfile1 <- rbind(logfile1, log.tmp)
       if(print.log==TRUE){print("break")
-        print(log.tmp )}
+                          print(log.tmp )}
       break;
     }
     #initialize next u sequence
