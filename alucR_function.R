@@ -54,9 +54,9 @@ aluc<-function(  lc,
                  nochange.lc=c(),			
                  spatial=c(), 
                  demand=c(), 
-                 elas=rep(0, max(lc_unique)), 
-                 traj=matrix(data=1, ncol=max(lc_unique, nrow=max(lc_unique))), 
-				 				 rule.mw = data.frame(), # moving window, for example urban only expands in the urban neighbourhood 
+                 elas=matrix(data=0, ncol=max(lc_unique), nrow=max(lc_unique)), 
+                 traj=matrix(data=1, ncol=max(lc_unique), nrow=max(lc_unique)), 
+				 rule.mw = data.frame(), 
                  init.years= 5,  
                  method = "competitive",
                  stop.crit=c(0.0003 , 1, 10),
@@ -131,7 +131,7 @@ while (epoche <= nrow(demand)){
       get(suit[epoche]) # in case different stacks for each episode are specified - possibly useful if  for example new roads are build
     }  
 	# apply moving window if requested
-	if (nrow(rule.mw) > 0 ){
+	if (length(nrow(rule.mw)) > 0 ){
 	####### moving window algorthem
 	for (f in 1:nrow(rule.mw)){ #moving window rule.
 	  suitNames <- names(p_raster)
