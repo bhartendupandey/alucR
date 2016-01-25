@@ -50,7 +50,7 @@
 ######
 aluc<-function(  lc, 						
                  suit, 						
-                 natural,				
+                 natural.lc,				
                  nochange.lc=c(),			
                  spatial=c(), 
                  demand=c(), 
