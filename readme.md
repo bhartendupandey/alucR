@@ -12,15 +12,15 @@ The code uses basic R-language and packages. This makes it possible to easily ad
 
 argument | description 
 ----- | ----- 
-lc | categorical RasterLayer of the initial Land Use/Cover Classes  
-suit | either a RasterStack or a list of RasterStacks(for each year) of the suitabilities for land cover classes (ordered by preferences) resulting from the suitability analysis (see above). The data type should be Float (FLT4S). The names of the layers should correspond to the landuse classes, starting with "lc#", for example: "lc7", "lc4", "lc3",..  
-natural | character string defining land cover classes referring to natural vegetation ordered by succession states. For example: c("lc1", "lc2")
-nochange.lc | character string defining land cover/use classes without suitability layer which are expected to stay unchanged (for example: water). For example: c("lc5")
+lc | categorical RasterLayer of the initial Land Use/Cover Classes (only those classes present can be modeled, landcover categories should not include 0 but start at 1)  
+suit | either a RasterStack or a list of RasterStacks(for each year) of the suitabilities for land use classes (ordered by preferences) resulting from the suitability analysis (see above). The data type should be Float (FLT4S). The names of the layers should correspond to the landuse classes, starting with "lc#", for example: "lc7", "lc4", "lc3",..  , only include suitabilities for landuses present in the initial land cover dataset.  
+natural.lc | character string defining land cover classes referring to natural vegetation ordered by succession states. For example: c("lc1", "lc2"). only applies if there is no specified suitability layer for those natural land covers. 
+nochange.lc | character string defining land cover/use classes without suitability layer which are expected to stay unchanged (for example: water). For example: c("lc5"). Do not include a suitability layer for those in the suit raster stack.
 spatial | either a RasterLayer or a list of RasterLayers(for each year) of the locations where no land use change is allowed (i.e. Protected Areas).Definition: NA for areas where conversions are allowed and 1 for areas where conversions are not allowed
-demand | matrix specifying the amount of pixel for each land use class in the subsequent modelling steps. Columns refer to the land use classes for which there is a suitability layer (same naming as for suitability layers), number of rows equal the number of modelling steps. Values should be integer.
+demand | data.frame specifying the amount of pixel for each land use class (present in the suitability stack: suit) for the subsequent modelling steps. Columns refer to the land use classes for which there is a suitability layer (same naming as for suitability layers), number of rows equal the number of modelling steps. Values should be integer.
 elas | matrix of values between 0 and 1 referring to the conversion/trajectory elasticity of the land use/cover classes. Rows: initial land use/cover (1 to n), Columns: following land use/cover (1 to n). Definition 0: no change due to elasticities, 0.5: incresed likelyness for the class or conversion, 1: very high likelyness for the class or conversion.
 traj | matrix describing the temporal trajectories of land use/cover. Rows: initial land use/cover (1 to n), Columns: following land use/cover (1 to n). Values define the years of transition, e.g. 0: no transition allowed, 1: transition allowed after first iteration, 10: transition allowed after 10 iterations. must be specified for all land_cover classes.
-rule.mw | optional moving window algorithm. applies a moving window algorithm (circular) on the defined land use class(es) to and weight the respective suitability layer accordingly (example: urban is more likely to expand around urban areas). Suitability layer will be multiplied with the neighborhood weights and 0 set to NA. Definition: data.frame containing name of land use class and radius of moving window. Example data.frame(name="lc7",radius=500)
+rule.mw | optional moving window algorithm. applies a moving window algorithm (circular) on the defined land use class(es) and weight the respective suitability layer accordingly (example: urban is more likely to expand around urban areas). Suitability layer will be multiplied with the neighborhood weights and 0 set to NA. Definition: data.frame containing name of land use class and radius of moving window. Example data.frame(name="lc7",radius=500)
 init.years | numeric value or RasterLayer to set the initial number of years the pixels are under the specific land use/cover at the beginning of the modelling.
 method | either "competitive" or "hierarchical" see description
 stop.crit | only applies for method="competitive": vector containing 3 values. the first one defines the maximum deviation of allocated land use/cover to the demand in percent, the second one the maximum deviation of pixels for the smallest demand class, and the third defines the maximum deviation of each demand class in pixel.
@@ -104,7 +104,8 @@ The current code provides a running snapshot of the development and will further
 ##NEXT Steps:
 1. stick with rasters instead of convering everything to vectors
 2. stop land use allocation if demand cannot be allocated 
-3. ...
+3. check for naming and definition problems
+4. structure code into subsequent funtions for better erreo tracking and understanding
 
 ### Reference:  
 Verburg PH, Soepboer W, Veldkamp A, Limpiada R, Espaldon V, Mastura, Sharifah S. A. (2002) Modeling the Spatial Dynamics of Regional Land Use: The CLUE-S Model. Environmental Management, vols 30(3):391-405
