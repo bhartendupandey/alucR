@@ -405,7 +405,7 @@ for (i in c(1:ncol(p_vector.N))) {
 #####
     pseudo.index <- which(is.element(tprop_vector, pseudo.N))
 	if (length (pseudo.index) >=1){  
-    if(length (natural > 1)){
+    if(length (natural) > 1){
     for (i in 1:length(pseudo.index)){
       #i=1
       #can before.n be translated to natural 
