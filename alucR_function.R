@@ -419,7 +419,7 @@ for (i in c(1:ncol(p_vector.N))) {
       }
     }
     } 
-	if (length (natural)== 1) {tprop_vector[pseudo.index[i]] <- natural}
+	if (length (natural)== 1) {tprop_vector[pseudo.index] <- natural}
 	if (sum(is.element (tprop_vector, pseudo.N))!=0) {print( "error in natural vegetation module")}
     }
     # tprop_vector[which(tprop_vector==9)] <- natural[length(natural)]
