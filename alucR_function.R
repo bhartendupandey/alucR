@@ -173,9 +173,9 @@ while (epoche <= nrow(demand)){
         getValues (init.years)
         } else {
           rep(init.years, length (data_vector))
-    }
+    }}
     if (epoche==1){tprop.previous_vector <- data_vector}
-    }
+    
 #####
 #  1.2 Pseudo natural vegetation layer
 #####
