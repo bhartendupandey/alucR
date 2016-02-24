@@ -131,7 +131,7 @@ while (epoche <= nrow(demand)){
       get(suit[epoche]) # in case different stacks for each episode are specified - possibly useful if  for example new roads are build
     }  
 	# apply moving window if requested
-	if (length(nrow(rule.mw)) > 0 ){
+	if (nrow(rule.mw) > 0 ){
 	####### moving window algorthem
 	for (f in 1:nrow(rule.mw)){ #moving window rule.
 	  suitNames <- names(p_raster)
